@@ -1,0 +1,39 @@
+#ifndef NAPSE_H
+#define NAPSE_H
+
+// Configuration
+#define NUM_CHANNELS    4
+
+// GPIO and utility
+#define DRDY_PIN        10
+#define ADS_RST_PIN     3
+#define BATT_PIN        1
+#define BATT_DIVISION   3.0
+#define BATT_CORRECTION 0.965
+#define NEOPX_PIN       0
+
+// values
+#define COLOR_ERR       0xCC0000
+#define COLOR_INIT      0x006600
+#define COLOR_READ      0x0000FF
+
+
+// BLE Configuration
+#define SERVICE_UUID              "98abbe75-b810-4fe4-83a5-aea7dd9a915c"
+#define CHARACTERISTIC_DATA1_UUID "29b2b47e-7645-4394-9f9c-8da5b2426404"
+#define CHARACTERISTIC_DATA2_UUID "f139511a-e60c-4928-83a9-e10426c3f2c8"
+#define CHARACTERISTIC_DATA3_UUID "b6816379-9f6b-480e-b9b8-318c07daa58b"
+#define CHARACTERISTIC_DATA4_UUID "d5630305-8b25-466a-a47c-7d6c0bcfcc82"
+#define CHARACTERISTIC_DATA5_UUID "4eb1b863-1fa9-46e5-8052-d845e161e00c"
+#define CHARACTERISTIC_DATA6_UUID "a6fb48b9-0624-438a-82e2-6d4546aba505"
+#define CHARACTERISTIC_DATA7_UUID "bc9a9548-97d9-45f3-9c4f-9054df2a3d83"
+#define CHARACTERISTIC_DATA8_UUID "c8aa9490-aa40-48ff-b82b-93d38ed7d499"
+#define CHARACTERISTIC_DATA_UUID  "9d746b90-552c-4eef-b3f0-506d1b3a48b2"
+#define CHARACTERISTIC_START_STOP_UUID "5c804a1f-e0c0-4e30-b068-55a47b8a60c7"
+#define CHARACTERISTIC_BATT_UUID  "50f9da7d-8dd4-4354-956d-3d1b5d68322e"
+
+
+// Types
+
+#endif
+
