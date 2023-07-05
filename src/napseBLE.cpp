@@ -43,7 +43,7 @@ bool NapseBLE::setup(int _numCh) {
   BLEDevice::init(blid);
   pServer = BLEDevice::createServer();
   pService = pServer->createService(SERVICE_UUID);
-  
+
   // create characteristics
   //
   pCharacteristicData = pService->createCharacteristic(
@@ -53,7 +53,7 @@ bool NapseBLE::setup(int _numCh) {
   dataDescriptor = new BLEDescriptor ("2901", 100);
   dataDescriptor->setValue("All data as uint8");
   pCharacteristicData->addDescriptor(dataDescriptor);
-  
+
   pCharacteristicStartStop = pService->createCharacteristic(
       CHARACTERISTIC_START_STOP_UUID,
       BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE
@@ -72,7 +72,7 @@ bool NapseBLE::setup(int _numCh) {
   battDescriptor->setValue("Battery value (string)");
   pCharacteristicBatt->addDescriptor(battDescriptor);
 
-// initial values
+  // initial values
   uint32_t initVal = 0;
   pCharacteristicStartStop->setValue(initVal);
 
