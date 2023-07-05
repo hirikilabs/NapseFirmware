@@ -10,7 +10,7 @@ boolean deviceIDReturned = false;
 boolean startedLogging = false;
 uint16_t start_stop = 0;
 boolean start_stop_changed = false;
-uint32_t channel_data [8];
+uint32_t channel_data [10];
 
 ADS1299 ADS;
 NapseBLE ble;
@@ -186,10 +186,12 @@ void loop()
   if (ADS.updateData(&lastData))
   {
     ADS.printData(lastData);
-    channel_data[0] = lastData.chan1;
-    channel_data[1] = lastData.chan2;
-    channel_data[2] = lastData.chan3;
-    channel_data[3] = lastData.chan4;
+    channel_data[0] = lastData.numPacket;
+    channel_data[1] = lastData.status;
+    channel_data[2] = lastData.chan1;
+    channel_data[3] = lastData.chan2;
+    channel_data[4] = lastData.chan3;
+    channel_data[5] = lastData.chan4;
 
     ble.updateData(channel_data);
   }

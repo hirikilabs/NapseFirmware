@@ -91,7 +91,7 @@ bool NapseBLE::setup(int _numCh) {
 }
 
 void NapseBLE::updateData(uint32_t data[]) {
-  pCharacteristicData->setValue((uint8_t*)data, 4*9);
+  pCharacteristicData->setValue((uint8_t*)data, 4*10);
 }
 
 void NapseBLE::updateBatt(float battv) {
