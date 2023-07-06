@@ -7,7 +7,7 @@
 #include "napse.h"
 
 class NapseBLE {
-  int numCh;
+  int num_ch;
 
   public:
     BLEServer* pServer;
@@ -15,12 +15,14 @@ class NapseBLE {
     BLECharacteristic* pCharacteristicData;
     BLECharacteristic* pCharacteristicStartStop;
     BLECharacteristic* pCharacteristicBatt;
+    BLECharacteristic* pCharacteristicConfig;
     BLEDescriptor* dataDescriptor;
     BLEDescriptor* startStopDescriptor;
     BLEDescriptor* battDescriptor;
+    BLEDescriptor* confDescriptor;
     BLEAdvertising* pAdvertising;
 
-  bool setup(int _numCh);
+  bool setup(int _num_ch);
   void updateData(uint32_t data[]);
   void updateBatt(float battv);
 
