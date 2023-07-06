@@ -120,10 +120,10 @@ void loop()
     Serial.println("----------------------------------------------");
 
     // Channel mode
-    ADS.channelInputNormal(1);
-    ADS.channelInputNormal(2);
-    ADS.channelInputNormal(3);
-    ADS.channelInputNormal(4);
+    for (int i = 1; i <= ADS.numCh; i++) {
+      ADS.channelInputNormal(i);
+      ADS.channelGainSet(i, PGA_GAIN_6);
+    }
     // ADS.channelInputShorted(1);
     // ADS.channelInputShorted(2);
     // ADS.channelInputShorted(3);
