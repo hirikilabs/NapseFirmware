@@ -1,8 +1,11 @@
-#ifndef NAPSE_H
-#define NAPSE_H
+#ifndef _NAPSE_H
+#define _NAPSE_H
+
+#include <inttypes.h>
 
 // Configuration
 #define NUM_CHANNELS    4
+#define MAX_CHANNELS    8
 
 // GPIO and utility
 #define DRDY_PIN        10
@@ -28,6 +31,7 @@
 
 
 // Types
+typedef uint8_t channel_config_t;
 
 #endif
 
