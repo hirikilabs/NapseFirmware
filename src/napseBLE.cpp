@@ -1,9 +1,11 @@
 #include <Esp.h>
 #include "napseBLE.h"
+#include "napse.h"
 
 extern uint16_t start_stop;
 extern bool start_stop_changed;
-extern uint8_t* channel_config;
+extern channel_config_t* channel_config;
+extern bool config_changed;
 
 class StartStopCallback: public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
@@ -39,10 +41,11 @@ class ConfigCallback: public BLECharacteristicCallbacks {
       Serial.print(data_len);
       Serial.print(") ");
       Serial.println(rx_data[0], HEX);
-      for (int i = 0; i < data_len; i++) {
-        if (i>7) 
-          break;
-        channel_config[i] = rx_data[i];
+      if (data_len >= 8) {
+	for (int i=0; i<data_len; i++) {
+	  channel_config[i] = rx_data[i];
+	}
+	config_changed = true;
       }
     }
   }
@@ -67,13 +70,29 @@ bool NapseBLE::setup(int _num_ch) {
   pService = pServer->createService(SERVICE_UUID);
 
   // create characteristics
-  //
+  pCharacteristicInfo = pService->createCharacteristic(
+      CHARACTERISTIC_INFO_UUID,
+      BLECharacteristic::PROPERTY_READ
+      );
+  infoDescriptor = new BLEDescriptor ("2901", 100);
+  infoDescriptor->setValue("Device ID and number of channels");
+  infoDescriptor->setAccessPermissions(ESP_GATT_PERM_READ);
+  pCharacteristicInfo->addDescriptor(infoDescriptor);
+  uint8_t* info;
+  info = (uint8_t*) malloc(9);
+  memcpy(info, &chip_id, 8);
+  info[8] = num_ch;
+  pCharacteristicInfo->setValue(info, 9);
+  free(info);
+
+  
   pCharacteristicData = pService->createCharacteristic(
       CHARACTERISTIC_DATA_UUID,
       BLECharacteristic::PROPERTY_READ
       );
   dataDescriptor = new BLEDescriptor ("2901", 100);
   dataDescriptor->setValue("All data as uint8");
+  dataDescriptor->setAccessPermissions(ESP_GATT_PERM_READ);
   pCharacteristicData->addDescriptor(dataDescriptor);
 
   pCharacteristicStartStop = pService->createCharacteristic(
@@ -83,6 +102,7 @@ bool NapseBLE::setup(int _num_ch) {
 
   startStopDescriptor = new BLEDescriptor ("2901", 100);
   startStopDescriptor->setValue("Start or stop logging");
+  startStopDescriptor->setAccessPermissions(ESP_GATT_PERM_READ);
   pCharacteristicStartStop->addDescriptor(startStopDescriptor);
 
   pCharacteristicBatt = pService->createCharacteristic(
@@ -91,7 +111,8 @@ bool NapseBLE::setup(int _num_ch) {
       );
 
   battDescriptor = new BLEDescriptor ("2901", 100);
-  battDescriptor->setValue("Battery value (string)");
+  battDescriptor->setValue("Battery value (float32)");
+  battDescriptor->setAccessPermissions(ESP_GATT_PERM_READ);
   pCharacteristicBatt->addDescriptor(battDescriptor);
 
   pCharacteristicConfig = pService->createCharacteristic(
@@ -101,9 +122,8 @@ bool NapseBLE::setup(int _num_ch) {
 
   confDescriptor = new BLEDescriptor ("2901", 100);
   confDescriptor->setValue("Channels configuration");
+  confDescriptor->setAccessPermissions(ESP_GATT_PERM_READ);
   pCharacteristicConfig->addDescriptor(confDescriptor);
-
-
 
   // initial values
   uint32_t init_val = 0;
