@@ -97,6 +97,8 @@
 
 #endif
 
+// MISC1
+#define SRB1_NEG_INPUTS         (1 << 5)
 
 // CHXSET
 
