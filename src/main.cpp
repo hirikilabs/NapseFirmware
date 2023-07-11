@@ -1,16 +1,22 @@
 #include <Arduino.h>
+#include <cstdint>
+#include <stdlib.h>
 #include <ADS1299.h>
 #include <Adafruit_NeoPixel.h>
+#include "esp32-hal-psram.h"
 #include "napse.h"
 #include "napseBLE.h"
 #include "leds.h"
+
+//#define DEBUG_ON
 
 channel_data_t last_data;
 boolean device_id_returned = false;
 uint16_t start_stop = 0;
 boolean start_stop_changed = false;
 uint32_t channel_data[10];
-uint8_t channel_config[8];
+channel_config_t* channel_config;
+boolean config_changed = false;
 
 ADS1299 ADS;
 NapseBLE ble;
@@ -18,7 +24,7 @@ NapseLEDs leds;
 
 void printADSConfig()
 {
-  Serial.println(ADS.getDeviceID(), BIN); // Funciton to return Device ID
+  Serial.println(ADS.getDeviceID(), BIN); // Function to return Device ID
 
   // prints dashed line to separate serial print sections
   Serial.println("----------------------------------------------");
@@ -46,8 +52,38 @@ float get_batt() {
   return voltage_measured * BATT_DIVISION * BATT_CORRECTION;
 }
 
+void parseConfig(channel_config_t* config) {
+  for (int i=0; i<MAX_CHANNELS; i++) {
+    // shortcircuit mode xxxxxxx1 = shortcircuit
+    if (config[i] & 0x01) {
+      ADS.channelInputShorted(i+1);
+    } else {
+      ADS.channelInputNormal(i+1);
+    }
+    // gain xxxxnnnx
+    uint8_t gain = (config[i] << 3) | 0b10001111;
+    ADS.channelGainSet(i+1, gain);
+  }
+  // ok, configured
+  config_changed = false;
+}
+
+void configureADS() {
+  // Channels mode
+  for (int i = 1; i <= ADS.numCh; i++) {
+    ADS.channelInputNormal(i);
+    ADS.channelGainSet(i, PGA_GAIN_6);
+  }
+  // referential mode, datasheet pg 68
+  ADS.writeRegister(ADS1299_MISC1, SRB1_NEG_INPUTS);
+}
+
+
 void setup()
 {
+  // data
+  channel_config = (channel_config_t*) malloc(sizeof(channel_config_t) * MAX_CHANNELS);
+  
   // NeoPX
   // start on red
   leds.setup(NEOPX_PIN);
@@ -65,23 +101,24 @@ void setup()
   pinMode(BATT_PIN, INPUT);
 
   Serial.println();
-  Serial.println("ADS1299-bridge has started!");
+  Serial.println("⚡ ADS1299-bridge has started!");
 
   ADS.setup(DRDY_PIN, ADS1299_4CH); // (DRDY pin, num of channels);
   delay(10);                  // delay to ensure connection
 
-  Serial.println("ADS1299-bridge configured!");
+  Serial.println("⚙ ADS1299-bridge configured!");
 
   ADS.RESET();
-  Serial.println("ADS1299-bridge reset!");
+  Serial.println("✅ ADS1299-bridge reset!");
   ADS.STOP();
+  configureADS();
   // ok, show it (green)
   leds.set(COLOR_INIT);
 
   // BLEServer
-  Serial.println("Starting BLE...");
+  Serial.println("🔌 Starting BLE...");
   ble.setup(ADS1299_4CH);
-  Serial.println("Started BLE...");
+  Serial.println("📡 Started BLE...");
   // update battery value
   ble.updateBatt(get_batt());
 }
@@ -91,9 +128,9 @@ void loop()
   if (device_id_returned == false)
   {
 
-    Serial.print("ID: ");
-    Serial.println(ADS.getDeviceID(), BIN); // Funciton to return Device ID
-
+    Serial.print("🪪 ID: ");
+    Serial.println(ADS.getDeviceID(), BIN); // Function to return Device ID
+#ifdef DEBUG_ON
     // prints dashed line to separate serial print sections
     Serial.println("----------------------------------------------");
 
@@ -119,18 +156,6 @@ void loop()
     Serial.println(" modified.");
     Serial.println("----------------------------------------------");
 
-    // Channel mode
-    for (int i = 1; i <= ADS.numCh; i++) {
-      ADS.channelInputNormal(i);
-      ADS.channelGainSet(i, PGA_GAIN_6);
-    }
-    // ADS.channelInputShorted(1);
-    // ADS.channelInputShorted(2);
-    // ADS.channelInputShorted(3);
-    // ADS.channelInputShorted(4);
-    
-    //ADS.channelGainSet(1, PGA_GAIN_6);
-
     // Repeat PRINT ALL REGISTERS to verify changes 
     for (int addr = 0x01; addr < 0x18; addr++)
     {
@@ -139,7 +164,8 @@ void loop()
       ADS.printRegister(reg);
     }
     Serial.println("----------------------------------------------");
-    Serial.print("Batt: ");
+#endif    
+    Serial.print("🔋 Batt: ");
     Serial.println(get_batt());
     Serial.println("----------------------------------------------");
     
@@ -170,6 +196,10 @@ void loop()
     }
   }
 
+  if (config_changed) {
+    parseConfig(channel_config);
+  }
+  
   // BLE commands
   if (start_stop_changed) {
     if (start_stop == 0) {
@@ -184,17 +214,24 @@ void loop()
     start_stop_changed = false;
   }
 
-  // print data if available
+  // get data if available
   if (ADS.updateData(&last_data))
   {
-    ADS.printData(last_data);
+    //ADS.printData(last_data);
     channel_data[0] = last_data.numPacket;
     channel_data[1] = last_data.status;
     channel_data[2] = last_data.chan1;
     channel_data[3] = last_data.chan2;
     channel_data[4] = last_data.chan3;
     channel_data[5] = last_data.chan4;
-
+    if (ADS.numCh > 4) {
+      channel_data[6] = last_data.chan5;
+      channel_data[7] = last_data.chan6;
+    }
+    if (ADS.numCh > 6) {
+      channel_data[8] = last_data.chan7;
+      channel_data[9] = last_data.chan8;
+    }
     ble.updateData(channel_data);
   }
 }
