@@ -12,10 +12,12 @@ class NapseBLE {
   public:
     BLEServer* pServer;
     BLEService* pService;
+    BLECharacteristic* pCharacteristicInfo;
     BLECharacteristic* pCharacteristicData;
     BLECharacteristic* pCharacteristicStartStop;
     BLECharacteristic* pCharacteristicBatt;
     BLECharacteristic* pCharacteristicConfig;
+    BLEDescriptor* infoDescriptor;
     BLEDescriptor* dataDescriptor;
     BLEDescriptor* startStopDescriptor;
     BLEDescriptor* battDescriptor;
