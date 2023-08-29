@@ -1,4 +1,5 @@
 #include <Esp.h>
+#include "BLEDevice.h"
 #include "napseBLE.h"
 #include "napse.h"
 
@@ -6,6 +7,20 @@ extern uint16_t start_stop;
 extern bool start_stop_changed;
 extern channel_config_t* channel_config;
 extern bool config_changed;
+
+bool deviceConnected = false;
+
+class MyServerCallbacks: public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *param) {
+      deviceConnected = true;
+      pServer->updateConnParams(param->connect.remote_bda, 0x06, 0x06, 0, 100);
+    };
+
+    void onDisconnect(BLEServer* pServer) {
+      deviceConnected = false;
+      pServer->startAdvertising();
+    }
+};
 
 class StartStopCallback: public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
@@ -66,9 +81,11 @@ bool NapseBLE::setup(int _num_ch) {
 
   // init BLE
   BLEDevice::init(blid);
+  //BLEDevice::setMTU(1024);
   pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
   pService = pServer->createService(SERVICE_UUID);
-
+  
   // create characteristics
   pCharacteristicInfo = pService->createCharacteristic(
       CHARACTERISTIC_INFO_UUID,
@@ -139,6 +156,8 @@ bool NapseBLE::setup(int _num_ch) {
   pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->setScanResponse(true);
+  pAdvertising->setMinPreferred(0x06);
+  pAdvertising->setMaxPreferred(0x06);
   BLEDevice::startAdvertising();
 
   return true;
