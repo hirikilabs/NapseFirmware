@@ -101,6 +101,16 @@
 #define SRB1_NEG_INPUTS         (1 << 5)
 
 // CHXSET
+#define CH_NORMAL		0b00000000
+#define CH_SHORTED		0b00000001
+#define CH_BIAS_MES		0b00000010
+#define CH_VDD			0b00000011
+#define CH_TEMP			0b00000110
+#define CH_TEST			0b00000101
+#define CH_BIAS_DRP		0b00000110
+#define CH_BIAS_DRN		0b00000111
+
+#define CH_SRB2			(1 << 3)
 
 #define PGA_GAIN_1              0b10001111
 #define PGA_GAIN_2              0b10011111
