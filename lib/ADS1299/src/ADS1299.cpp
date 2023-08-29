@@ -151,8 +151,8 @@ boolean ADS1299::updateData(channel_data_t *data)
         // store data in struct
         data->numPacket = outputCount;
         data->status = output[0];
-        data->chan2 = output[2];
         data->chan1 = output[1];
+        data->chan2 = output[2];
         data->chan3 = output[3];
         data->chan4 = output[4];
         if (numCh > 4)
@@ -177,7 +177,7 @@ boolean ADS1299::updateData(channel_data_t *data)
 
 
 // changes channel mode to normal input
-void ADS1299::channelInputNormal(byte channel) 
+void ADS1299::channelInputMode(byte channel, byte mode) 
 {
     // check channel
     if (channel > numCh) {
@@ -187,25 +187,9 @@ void ADS1299::channelInputNormal(byte channel)
     byte chan_mode;
     chan_mode = readRegister(ADS1299_LOFF + channel);
 
-    chan_mode = chan_mode & (0b11111000);
-
-    writeRegister(ADS1299_LOFF + channel, chan_mode);
-
-}
-
-// changes channel mode to shorted input
-void ADS1299::channelInputShorted(byte channel) 
-{
-    // check channel
-    if (channel > numCh) {
-        return;
-    }
-    // read channel mode
-    byte chan_mode;
-    chan_mode = readRegister(ADS1299_LOFF + channel);
-
-    chan_mode = chan_mode & (0b11111001);
-
+    // apply it
+    chan_mode = chan_mode & 0b11111000;
+    chan_mode = chan_mode | mode;
     writeRegister(ADS1299_LOFF + channel, chan_mode);
 }
 
@@ -223,6 +207,23 @@ void ADS1299::channelGainSet(byte channel, byte gain) {
     chan_mode = chan_mode & gain;
 
     writeRegister(ADS1299_LOFF + channel, chan_mode);
+}
+
+void ADS1299::channelUseSRB2(byte channel, bool use) {
+    // check channel
+    if (channel > numCh) {
+        return;
+    }
+    // read channel config
+    byte chan_conf;
+    chan_conf = readRegister(ADS1299_LOFF + channel);
+    
+    if (use) {
+      chan_conf = chan_conf | CH_SRB2;
+    } else {
+      chan_conf = chan_conf & ~(CH_SRB2);
+    }
+    writeRegister(ADS1299_LOFF + channel, chan_conf);
 }
 
 // prints register
