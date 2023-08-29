@@ -17,8 +17,10 @@
 
 // values
 #define COLOR_ERR       0xCC0000
-#define COLOR_INIT      0x006600
-#define COLOR_READ      0x0000FF
+#define COLOR_READ      0x006600
+#define COLOR_INIT_BLE  0x0000FF
+#define COLOR_INIT_STA  0xFF00FF
+#define COLOR_INIT_AP   0xFF6600
 
 
 // BLE Configuration
