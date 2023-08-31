@@ -55,7 +55,8 @@ public:
   byte getDeviceID();
   byte readRegister(byte address);
   void writeRegister(byte address, byte value);
-    
+
+  void setSampleRate(byte rate);
   // channel data read
   // returns true if new data is read from the ADC
   boolean updateData(channel_data_t* data);

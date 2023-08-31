@@ -176,6 +176,18 @@ boolean ADS1299::updateData(channel_data_t *data)
 }
 
 
+void ADS1299::setSampleRate(byte rate) 
+{
+    // read config1
+    byte conf1;
+    conf1 = readRegister(ADS1299_CONFIG1);
+
+    // apply it
+    conf1 = conf1 & 0b11111000;
+    conf1 = conf1 | rate;
+    writeRegister(ADS1299_CONFIG1, conf1);
+}
+
 // changes channel mode to normal input
 void ADS1299::channelInputMode(byte channel, byte mode) 
 {
