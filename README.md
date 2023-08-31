@@ -2,6 +2,19 @@
 
 Firmware for the Napse open source EEG board.
 
+
+## WiFi
+
+- Port 31337 UDP - Sends data to configured client IP. Data is 44 bytes that decode to eleven 32-bit values, one unsigned 32 bit for status, eight 32-bit values containing channel data (valid signed 24-bit in two's-bit complement) and another 32 bit unsigned for event marks.
+- Port 1337 TCP - Listens for commands (1-byte + payload). Current implemented commands are:
+    * 0x00 : Stop data streaming
+	* 0x11 : Get device information (1 byte: number of channels)
+	* 0x33 + mark number(1 byte) : Insert mark in data stream
+	* 0x55 : Start data streaming
+	* 0xBB : Get battery voltage (4 bytes: single precision float)
+	* 0xCC + string + \n : Configure UDP client IP
+
+
 ## BLE
 
 - Service UUID: 98abbe75-b810-4fe4-83a5-aea7dd9a915c
