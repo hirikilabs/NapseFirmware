@@ -3,6 +3,8 @@
 
 #include <Adafruit_NeoPixel.h>
 
+#define NAPSE_LED_NUMBER 1
+
 class NapseLEDs {
   uint8_t pin;  
   Adafruit_NeoPixel strip;
