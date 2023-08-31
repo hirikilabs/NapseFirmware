@@ -15,13 +15,12 @@
 #define BATT_CORRECTION 0.965
 #define NEOPX_PIN       0
 
-// values
+// LED color values
 #define COLOR_ERR       0xCC0000
 #define COLOR_READ      0x006600
 #define COLOR_INIT_BLE  0x0000FF
 #define COLOR_INIT_STA  0xFF00FF
 #define COLOR_INIT_AP   0xFF6600
-
 
 // BLE Configuration
 #define SERVICE_UUID              "98abbe75-b810-4fe4-83a5-aea7dd9a915c"
@@ -31,6 +30,13 @@
 #define CHARACTERISTIC_BATT_UUID  "50f9da7d-8dd4-4354-956d-3d1b5d68322e"
 #define CHARACTERISTIC_CONF_UUID  "aa766dda-0889-42ec-81f7-53cf26ad05ce"
 
+// WiFi TCP Commands
+#define WIFI_COMMAND_STOP      0x00
+#define WIFI_COMMAND_INFO      0x11
+#define WIFI_COMMAND_MARK      0x33
+#define WIFI_COMMAND_START     0x55
+#define WIFI_COMMAND_BATT      0xBB
+#define WIFI_COMMAND_CLIENT    0xCC
 
 // Types
 typedef uint8_t channel_config_t;
