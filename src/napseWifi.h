@@ -52,7 +52,6 @@ public:
     napse_wifi_credentials_t getCredentials();
     bool saveCredentials(napse_wifi_credentials_t credentials);
     WiFiClient client();
-    void updateBatt(float battv);
 };
 
 #endif

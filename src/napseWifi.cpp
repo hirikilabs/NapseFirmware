@@ -10,12 +10,12 @@
 WiFiUDP udp;
 WiFiServer tcp;
 
-#define FORMAT_SPIFFS_IF_FAILED true
-//#define SAVE_TEST_CREDS_FILE
+#define FORMAT_SPIFFS_IF_FAILED true    // try to format the filesystem if mounting fails
+//#define SAVE_TEST_CREDS_FILE          // create a fixed credential file (FOR TESTING)
 
 bool NapseWifi::init() {
     Serial.println("💾 Starting filesystem.");
-    // init SPIFFS for credentials and IP data
+    // init SPIFFS for credentials and client IP data
     if(!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)){
         Serial.println("❌ An Error has occurred while mounting SPIFFS");
         return false;
@@ -72,6 +72,7 @@ bool NapseWifi::init() {
         udp.begin(WiFi.softAPIP(), NAPSE_UDP_PORT);
     }
 
+    // mDNS (napse.local)
     if(!MDNS.begin("napse")) {
         Serial.println("❌ Error starting mDNS");
         return false;
@@ -83,6 +84,7 @@ bool NapseWifi::init() {
     return true;
 }
 
+// Create a WiFi network in AP mode
 void NapseWifi::createAPPortal() {
     Serial.print("\n🛜 Can't connect to AP, creating wifi: ");
     // create Wifi name
@@ -97,6 +99,7 @@ void NapseWifi::createAPPortal() {
     wifi_mode = NAPSE_WIFI_MODE_AP;
 }
 
+// Get wifi credentials from the filesystem
 napse_wifi_credentials_t NapseWifi::getCredentials() {
     napse_wifi_credentials_t creds;
 
@@ -107,9 +110,10 @@ napse_wifi_credentials_t NapseWifi::getCredentials() {
        creds.psk = WIFI_PSK;
        creds.ssid = WIFI_SSID;
        creds.client = "0.0.0.0";
-       creds.ok = false;
+       creds.ok = false;            // return false so the previous values are discarded
        return creds;
     } else {
+        // read the values
         creds.ssid = file.readStringUntil('\n');
         creds.psk = file.readStringUntil('\n');
         creds.client = file.readStringUntil('\n');
@@ -125,6 +129,7 @@ napse_wifi_credentials_t NapseWifi::getCredentials() {
     }
 }
 
+// store credentials in the filesystem
 bool NapseWifi::saveCredentials(napse_wifi_credentials_t credentials) {
     File file = SPIFFS.open(WIFI_CREDS_FILE, FILE_WRITE);
     if(!file){
@@ -142,18 +147,17 @@ bool NapseWifi::saveCredentials(napse_wifi_credentials_t credentials) {
     }
 }
 
+// Send data via UDP
 void NapseWifi::sendData(uint32_t data[]) {
     const char * udpAddress = creds.client.c_str();
     udp.beginPacket(udpAddress, 31337);
-    udp.write((uint8_t *)data, 40);
+    udp.write((uint8_t *)data, 44);
     udp.endPacket();
     udp.flush();
 }
 
+// check if we have TCP clients
 WiFiClient NapseWifi::client() {
     return tcp.available();
 }
 
-void NapseWifi::updateBatt(float vbatt) {
-
-}
