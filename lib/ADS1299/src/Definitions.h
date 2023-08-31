@@ -56,13 +56,13 @@
 
 
 // CONFIG1
-#define DR_FMOD_64      0
-#define DR_FMOD_128     1
-#define DR_FMOD_256     2
-#define DR_FMOD_512     3
-#define DR_FMOD_1024    4
-#define DR_FMOD_2048    5
-#define DR_FMOD_4096    6
+#define ADS1299_DR_16KSPS  0
+#define ADS1299_DR_8KSPS   1
+#define ADS1299_DR_4KSPS   2
+#define ADS1299_DR_2KSPS   3
+#define ADS1299_DR_1KSPS   4
+#define ADS1299_DR_500SPS  5
+#define ADS1299_DR_250SPS  6
 
 #define CLK_EN          (1 << 5)
 #define DAISY_EN        (0 << 6)
