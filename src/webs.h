@@ -1,10 +1,17 @@
 #ifndef NAPSE_WEBS_H
 #define NAPSE_WEBS_H
 
+// root page HTML
 String serverRootHTML = "<!DOCTYPE html>\
 <html>\
 <head>\
  <title>Napse Configuration</title>\
+ <style>\
+    body {\
+        background-color: #ffcccc;\
+        font-family: sans-serif;\
+    }\
+ </style>\
 </head>\
 <body>\
 <h1>Napse Configuration</h1>\
