@@ -10,6 +10,7 @@
 #include "napse.h"
 #include <Adafruit_NeoPixel.h>
 
+#include "filesystem.h"
 #ifdef USE_BLE
 #include "esp32-hal-psram.h"
 #include "esp_bt.h"
@@ -33,8 +34,10 @@ uint32_t init_color;                    // initial LED color
 bool do_delay;                          // need to do delay? (TCP)
 float batt;                             // battery voltage
 String client_ip;                       // client UDP address
+napse_wifi_credentials_t wifi_creds;    // credentials for wifi network 
 
 ADS1299 ADS;                            // ADS object
+NapseFilesystem napse_fs;
 #ifdef USE_BLE
 NapseBLE bl;                            // BLE object
 #else
@@ -129,9 +132,9 @@ void configureADS() {
 #ifndef USE_BLE
 // WebServer handles
 void handleRoot() {
-    serverRootHTML.replace("%%SSID%%", wi.creds.ssid);
-    serverRootHTML.replace("%%PSK%%", wi.creds.psk);
-    serverRootHTML.replace("%%CLIENT%%", wi.creds.client);
+    serverRootHTML.replace("%%SSID%%", wi.wifi_credentials.ssid);
+    serverRootHTML.replace("%%PSK%%", wi.wifi_credentials.psk);
+    serverRootHTML.replace("%%CLIENT%%", wi.wifi_credentials.client);
     wi.webServer->send(200, "text/html", serverRootHTML);
 }
 
@@ -142,7 +145,7 @@ void handleConfig() {
         creds.ssid = wi.webServer->arg("fssid");
         creds.psk = wi.webServer->arg("fpsk");
         creds.client = wi.webServer->arg("fclient");
-        bool ans = wi.saveCredentials(creds);
+        bool ans = napse_fs.saveCredentials(creds);
         if (ans) {
             wi.webServer->send(200, "text/html", "<h1>OK Rebooting...</h1>");
             delay(5000);
@@ -190,6 +193,14 @@ void setup() {
     Serial.println("✅ ADS1299-bridge reset!");
     ADS.STOP();     // Stop data capture
   
+    // Filesystem
+    Serial.println("💾 Starting filesystem.");
+    if (!napse_fs.init()) {
+        Serial.println("❌ An Error has occurred while mounting SPIFFS");
+    } else {
+        Serial.println("💽 Started filesystem.");
+    };
+
     // BLEServer
 #ifdef USE_BLE
     Serial.println("🔌 Starting BLE...");
@@ -199,14 +210,15 @@ void setup() {
     bl.updateBatt(get_batt());
 #else
     Serial.println("🔌 Starting WiFi...");
-    wi.init();
+    wifi_creds = napse_fs.getCredentials();
+    wi.init(wifi_creds);
     Serial.println("📡 Started WiFi...");
     // start webserver
     wi.webServer->on("/", handleRoot);
     wi.webServer->on("/config", handleConfig);
     wi.webServer->begin();
     Serial.print("🪧 Client address: ");
-    Serial.println(wi.creds.client);
+    Serial.println(wi.wifi_credentials.client);
 #endif
 
     // ok, show it
@@ -351,8 +363,8 @@ void loop() {
                     break;
                 case WIFI_COMMAND_CLIENT:
                     client_ip = c.readStringUntil('\n');
-                    wi.creds.client = client_ip;
-                    wi.saveCredentials(wi.creds);
+                    wi.wifi_credentials.client = client_ip;
+                    napse_fs.saveCredentials(wi.wifi_credentials);
                     break;
                 default:
                     break;

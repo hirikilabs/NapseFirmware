@@ -41,5 +41,12 @@
 // Types
 typedef uint8_t channel_config_t;
 
+typedef struct {
+    bool ok;
+    String ssid;
+    String psk;
+    String client;
+} napse_wifi_credentials_t;
+
 #endif
 

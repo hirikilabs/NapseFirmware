@@ -6,7 +6,9 @@
 #include <WiFiUdp.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
-#include "SPIFFS.h"
+#include <SPIFFS.h>
+
+#include "napse.h"
 
 #define NAPSE_TCP_PORT 1337
 #define NAPSE_UDP_PORT 31337
@@ -31,26 +33,17 @@ typedef enum {
     NAPSE_WIFI_MODE_STA
 } napse_wifi_mode_t;
 
-typedef struct {
-    bool ok;
-    String ssid;
-    String psk;
-    String client;
-} napse_wifi_credentials_t;
-
 class NapseWifi {
     //WiFiUDP *udp;
     String clientIP;
     void createAPPortal();
 public:
-    napse_wifi_credentials_t creds;
+    napse_wifi_credentials_t wifi_credentials;
     napse_wifi_mode_t wifi_mode;
     WebServer *webServer;
 
-    bool init();
+    bool init(napse_wifi_credentials_t creds);
     void sendData(uint32_t data[]);
-    napse_wifi_credentials_t getCredentials();
-    bool saveCredentials(napse_wifi_credentials_t credentials);
     WiFiClient client();
 };
 

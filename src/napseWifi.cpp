@@ -10,32 +10,11 @@
 WiFiUDP udp;
 WiFiServer tcp;
 
-#define FORMAT_SPIFFS_IF_FAILED true    // try to format the filesystem if mounting fails
-//#define SAVE_TEST_CREDS_FILE          // create a fixed credential file (FOR TESTING)
-
-bool NapseWifi::init() {
-    Serial.println("💾 Starting filesystem.");
-    // init SPIFFS for credentials and client IP data
-    if(!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)){
-        Serial.println("❌ An Error has occurred while mounting SPIFFS");
-        return false;
-    }
-
-#ifdef SAVE_TEST_CREDS_FILE
-    napse_wifi_credentials_t crds;
-    crds.ssid = WIFI_SSID;
-    crds.psk = WIFI_PSK;
-    crds.client = "0.0.0.0";
-    crds.ok = true;
-    saveCredentials(crds);
-#endif
-    
+bool NapseWifi::init(napse_wifi_credentials_t creds) {
     // try to conenct to WiFi
     wifi_mode = NAPSE_WIFI_MODE_STA;
     int timeout = 0;
 
-    // get credentials from SPIFFS
-    creds = getCredentials();
     // if we have saved credentials, try to connect in STA mode
     // if conection fails, create the AP Portal.
     if (creds.ok) {
@@ -54,6 +33,8 @@ bool NapseWifi::init() {
                 break;
             }
         }
+        // ok, connected
+        wifi_credentials = creds;
     } else {
         createAPPortal();
     }
@@ -99,57 +80,9 @@ void NapseWifi::createAPPortal() {
     wifi_mode = NAPSE_WIFI_MODE_AP;
 }
 
-// Get wifi credentials from the filesystem
-napse_wifi_credentials_t NapseWifi::getCredentials() {
-    napse_wifi_credentials_t creds;
-
-    // try to read credentials
-    File file = SPIFFS.open(WIFI_CREDS_FILE);
-    if(!file || file.isDirectory()){
-       Serial.println("❌ failed to open WiFi credentials file");
-       creds.psk = WIFI_PSK;
-       creds.ssid = WIFI_SSID;
-       creds.client = "0.0.0.0";
-       creds.ok = false;            // return false so the previous values are discarded
-       return creds;
-    } else {
-        // read the values
-        creds.ssid = file.readStringUntil('\n');
-        creds.psk = file.readStringUntil('\n');
-        creds.client = file.readStringUntil('\n');
-        file.close();
-        // we have a SSID?
-        if (creds.ssid == "") {
-            creds.ok = false;
-            return creds;
-        }
-
-        creds.ok = true;
-        return creds;
-    }
-}
-
-// store credentials in the filesystem
-bool NapseWifi::saveCredentials(napse_wifi_credentials_t credentials) {
-    File file = SPIFFS.open(WIFI_CREDS_FILE, FILE_WRITE);
-    if(!file){
-      Serial.println("❌ failed to open WiFi credentials file for writing");
-      return false;
-    } else {
-        file.print(credentials.ssid);
-        file.write('\n');
-        file.print(credentials.psk);
-        file.write('\n');
-        file.print(credentials.client);
-        file.write('\n');
-        file.close();
-        return true;
-    }
-}
-
 // Send data via UDP
 void NapseWifi::sendData(uint32_t data[]) {
-    const char * udpAddress = creds.client.c_str();
+    const char * udpAddress = wifi_credentials.client.c_str();
     udp.beginPacket(udpAddress, 31337);
     udp.write((uint8_t *)data, 44);
     udp.endPacket();
