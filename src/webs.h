@@ -10,6 +10,16 @@ String serverRootHTML = "<!DOCTYPE html>\
     body {\
         background-color: #ffcccc;\
         font-family: sans-serif;\
+        font-size: 2vh;\
+    }\
+    h1 {\
+        font-size: 5vh;\
+    }\
+    h2 {\
+        font-size: 3vh;\
+    }\
+    input {\
+        font-size: 2vh;\
     }\
  </style>\
 </head>\
