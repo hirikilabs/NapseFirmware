@@ -8,7 +8,8 @@ String serverRootHTML = "<!DOCTYPE html>\
  <title>Napse Configuration</title>\
  <style>\
     body {\
-        background-color: #ffcccc;\
+        color: #ff9bfd;\
+        background-color: #494c88;\
         font-family: sans-serif;\
         font-size: 2vh;\
     }\
