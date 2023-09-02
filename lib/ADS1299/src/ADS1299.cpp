@@ -127,17 +127,13 @@ void ADS1299::writeRegister(byte address, byte value)
     digitalWrite(SS, HIGH);
 }
 
-boolean ADS1299::updateData(channel_data_t *data)
-{
-    if (digitalRead(DRDY) == LOW)
-    {
+boolean ADS1299::updateData(channel_data_t *data) {
+    if (digitalRead(DRDY) == LOW) {
         digitalWrite(SS, LOW);
         uint32_t output[9];
         uint32_t dataPacket;
-        for (int i = 0; i <= numCh; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
+        for (int i = 0; i <= numCh; i++) {
+            for (int j = 0; j < 3; j++) {
                 byte dataByte = transfer(0x00);
                 dataPacket = (dataPacket << 8) | dataByte;
             }
@@ -155,29 +151,24 @@ boolean ADS1299::updateData(channel_data_t *data)
         data->chan2 = output[2];
         data->chan3 = output[3];
         data->chan4 = output[4];
-        if (numCh > 4)
-        {
+        if (numCh > 4) {
             data->chan5 = output[5];
             data->chan6 = output[6];
         }
-        if (numCh > 6)
-        {
+        if (numCh > 6) {
             data->chan5 = output[7];
             data->chan6 = output[8];
         }
 
         return true;
-    }
-    else
-    {
+    } else {
         // not ready
         return false;
     }
 }
 
 
-void ADS1299::setSampleRate(byte rate) 
-{
+void ADS1299::setSampleRate(byte rate) {
     // read config1
     byte conf1;
     conf1 = readRegister(ADS1299_CONFIG1);
@@ -186,6 +177,40 @@ void ADS1299::setSampleRate(byte rate)
     conf1 = conf1 & 0b11111000;
     conf1 = conf1 | rate;
     writeRegister(ADS1299_CONFIG1, conf1);
+}
+
+// changes channel mode to normal input
+void ADS1299::channelPowerDown(byte channel) 
+{
+    // check channel
+    if (channel > numCh) {
+        return;
+    }
+    // read channel mode
+    byte chan_mode;
+    chan_mode = readRegister(ADS1299_LOFF + channel);
+
+    // apply it
+    chan_mode = chan_mode | 0b10000000;
+    
+    // read channel mode
+    writeRegister(ADS1299_LOFF + channel, chan_mode);
+}
+
+// changes channel mode to normal input
+void ADS1299::channelPowerUp(byte channel) 
+{
+    // check channel
+    if (channel > numCh) {
+        return;
+    }
+    // read channel mode
+    byte chan_mode;
+    chan_mode = readRegister(ADS1299_LOFF + channel);
+
+    // apply it
+    chan_mode = chan_mode & 0b01111111;
+    writeRegister(ADS1299_LOFF + channel, chan_mode);
 }
 
 // changes channel mode to normal input

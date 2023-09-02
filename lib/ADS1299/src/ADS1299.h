@@ -61,6 +61,9 @@ public:
   // returns true if new data is read from the ADC
   boolean updateData(channel_data_t* data);
 
+  void channelPowerDown(byte channel);
+  void channelPowerUp(byte channel);
+    
   // input mode selection
   void channelInputMode(byte channel, byte mode);
 
