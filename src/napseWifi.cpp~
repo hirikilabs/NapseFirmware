@@ -1,27 +1,20 @@
 #include "napseWifi.h"
-#include "Arduino.h"
-#include "HWCDC.h"
 #include "esp_wifi_types.h"
 #include <cstdint>
 #include <stdio.h>
-#include "FS.h"
-#include "SPIFFS.h"
 
 WiFiUDP udp;
 WiFiServer tcp;
 
-bool NapseWifi::init(napse_wifi_credentials_t creds) {
+void NapseWifi::init() {
     // try to conenct to WiFi
     wifi_mode = NAPSE_WIFI_MODE_STA;
     int timeout = 0;
-
+    // get credentials from SPIFFS
+    napse_wifi_credentials_t creds = getCredentials();
     // if we have saved credentials, try to connect in STA mode
     // if conection fails, create the AP Portal.
     if (creds.ok) {
-        Serial.print("❓ Trying to connect to: ");
-        Serial.print(creds.ssid);
-        Serial.print(" : ");
-        Serial.println(creds.psk);
         WiFi.begin(creds.ssid, creds.psk);
         // Wait for connection
         while (WiFi.status() != WL_CONNECTED) {
@@ -33,21 +26,16 @@ bool NapseWifi::init(napse_wifi_credentials_t creds) {
                 break;
             }
         }
-        // ok, connected
     } else {
         createAPPortal();
     }
 
-    // store wifi credentials (important for client)
-    wifi_credentials = creds;
-    udpAddress = wifi_credentials.client.c_str();
-    
-    // if we connected normally
+    // if we connecterd normally
     if (wifi_mode == NAPSE_WIFI_MODE_STA) {
         Serial.println("");
-        Serial.print("✅ Connected to ");
-        Serial.println(WiFi.SSID());
-        Serial.print("💻 IP address: ");
+        Serial.print("Connected to ");
+        Serial.println(WIFI_SSID);
+        Serial.print("IP address: ");
         Serial.println(WiFi.localIP());
         tcp.begin(NAPSE_TCP_PORT);
         udp.begin(WiFi.localIP(), NAPSE_UDP_PORT);
@@ -55,43 +43,47 @@ bool NapseWifi::init(napse_wifi_credentials_t creds) {
         tcp.begin(NAPSE_TCP_PORT);
         udp.begin(WiFi.softAPIP(), NAPSE_UDP_PORT);
     }
-
-    // mDNS (napse.local)
-    if(!MDNS.begin("napse")) {
-        Serial.println("❌ Error starting mDNS");
-        return false;
-    }
-    
-    // init the webserver
-    webServer = new WebServer(80);
-    
-    return true;
+ 
+    //udp = new WiFiUDP();
 }
 
-// Create a WiFi network in AP mode
 void NapseWifi::createAPPortal() {
-    Serial.print("\n🛜 Can't connect to AP, creating wifi: ");
+    Serial.println("\nCan't connect to AP, creating wifi...");
     // create Wifi name
-    char ssid[25];
+    char ssid[23];
     uint64_t chip_id = ESP.getEfuseMac();
-    snprintf(ssid, 25, "NAPSE-%llX", chip_id);
+    snprintf(ssid, 23, "NIT-%llX", chip_id);
     WiFi.mode(WIFI_AP);
     WiFi.softAP(ssid, WIFI_AP_PSK);
-    Serial.println(WiFi.softAPSSID());
-    Serial.print("💻 AP IP address: ");
+    Serial.print("AP IP address: ");
     Serial.println(WiFi.softAPIP());
     wifi_mode = NAPSE_WIFI_MODE_AP;
 }
 
-// Send data via UDP
-void NapseWifi::sendData(uint32_t data[]) {
-    udp.beginPacket(udpAddress, 31337);
-    udp.write((uint8_t *)data, 44);
-    udp.endPacket();
+napse_wifi_credentials_t NapseWifi::getCredentials() {
+    napse_wifi_credentials_t creds;
+    creds.psk = WIFI_PSK;
+    creds.ssid = WIFI_SSID;
+    creds.ok = true;
+    return creds;
 }
 
-// check if we have TCP clients
+void NapseWifi::saveCredentials(napse_wifi_credentials_t credentials) {
+
+}
+
+void NapseWifi::sendData(uint32_t data[]) {
+    const char * udpAddress = "172.16.30.240";
+    udp.beginPacket(udpAddress, 31337);
+    udp.write((uint8_t *)data, 40);
+    udp.endPacket();
+    udp.flush();
+}
+
 WiFiClient NapseWifi::client() {
     return tcp.available();
 }
 
+void NapseWifi::updateBatt(float vbatt) {
+
+}

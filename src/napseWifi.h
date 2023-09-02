@@ -36,6 +36,7 @@ typedef enum {
 class NapseWifi {
     //WiFiUDP *udp;
     String clientIP;
+    const char* udpAddress;
     void createAPPortal();
 public:
     napse_wifi_credentials_t wifi_credentials;

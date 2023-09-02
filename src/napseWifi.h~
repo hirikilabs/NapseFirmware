@@ -1,0 +1,48 @@
+#ifndef __NAPSE_WIFI
+#define __NAPSE_WIFI
+
+#include <Arduino.h>
+#include <WiFi.h>
+#include <WiFiUdp.h>
+#include "SPIFFS.h"
+
+#define NAPSE_TCP_PORT 1337
+#define NAPSE_UDP_PORT 31337
+
+#define PACKET_STOP   0x00
+#define PACKET_INFO   0x11
+#define PACKET_START  0x55
+#define PACKET_BATT   0xBB
+#define PACKET_CONFIG 0xCC
+#define PACKET_DST    0xDD
+
+#define WIFI_SSID "HIRIKILABS"
+#define WIFI_PSK  "Hal.2022"
+
+#define WIFI_AP_PSK "napse1234"
+
+typedef enum {
+  NAPSE_WIFI_MODE_AP,
+  NAPSE_WIFI_MODE_STA
+} napse_wifi_mode_t;
+
+typedef struct {
+    bool ok;
+    String ssid;
+    String psk;
+} napse_wifi_credentials_t;
+
+class NapseWifi {
+    //WiFiUDP *udp;
+    napse_wifi_credentials_t getCredentials();
+    void saveCredentials(napse_wifi_credentials_t credentials);
+    void createAPPortal();
+ public:
+  napse_wifi_mode_t wifi_mode;
+  void init();
+  void sendData(uint32_t data[]);
+  WiFiClient client();
+  void updateBatt(float battv);  
+};
+
+#endif
