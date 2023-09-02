@@ -35,8 +35,17 @@
 #define WIFI_COMMAND_INFO      0x11
 #define WIFI_COMMAND_MARK      0x33
 #define WIFI_COMMAND_START     0x55
+#define WIFI_COMMAND_GROUND    0x66
+#define WIFI_COMMAND_TEST      0x77
+#define WIFI_COMMAND_PWDN      0x88
+#define WIFI_COMMAND_PWUP      0x99
+#define WIFI_COMMAND_NORMAL    0xAA
 #define WIFI_COMMAND_BATT      0xBB
 #define WIFI_COMMAND_CLIENT    0xCC
+
+// Data Logging
+#define NAPSE_DATA_STOP        0
+#define NAPSE_DATA_START       1
 
 // Types
 typedef uint8_t channel_config_t;
@@ -47,6 +56,17 @@ typedef struct {
     String psk;
     String client;
 } napse_wifi_credentials_t;
+
+
+typedef struct {
+    boolean device_id_returned; // ADS ID ok?
+    uint32_t init_color;        // LED colors
+    bool do_delay;              // need to do delay after wifi command?
+    float batt;                             // battery voltage
+    String client_ip;                       // client UDP address
+    napse_wifi_credentials_t wifi_creds;    // credentials for wifi network 
+} napse_t;
+
 
 #endif
 

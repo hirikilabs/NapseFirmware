@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <ADS1299.h>
 #include "HWCDC.h"
+#include "Print.h"
 #include "esp_wifi_types.h"
 #include "napse.h"
 #include <Adafruit_NeoPixel.h>
@@ -25,16 +26,12 @@
 
 channel_data_t last_data;               // last data received from the ADS
 uint32_t channel_data[11];              // data to send
-boolean device_id_returned = false;     // for checking if the ADS is OK
-uint16_t start_stop = 0;                // start/stop logging flag
+uint16_t start_stop = NAPSE_DATA_STOP;  // start/stop logging flag
 boolean start_stop_changed = false;     // for BLE
 channel_config_t* channel_config;       // channel configuration
 boolean config_changed = false;         // for BLE
-uint32_t init_color;                    // initial LED color
-bool do_delay;                          // need to do delay? (TCP)
-float batt;                             // battery voltage
-String client_ip;                       // client UDP address
-napse_wifi_credentials_t wifi_creds;    // credentials for wifi network 
+
+napse_t napse;                          // firmware configuration
 
 ADS1299 ADS;                            // ADS object
 NapseFilesystem napse_fs;
@@ -105,7 +102,7 @@ void configureADS() {
     }
 
     // Sample Rate
-    ADS.setSampleRate(ADS1299_DR_500SPS);
+    ADS.setSampleRate(ADS1299_DR_250SPS);
     
     // Bias configuration
     ADS.writeRegister(ADS1299_CONFIG3, 0b11101100);
@@ -141,11 +138,10 @@ void handleRoot() {
 // handle web configuration form data
 void handleConfig() {
     if (wi.webServer->args() == 3) {
-        napse_wifi_credentials_t creds;
-        creds.ssid = wi.webServer->arg("fssid");
-        creds.psk = wi.webServer->arg("fpsk");
-        creds.client = wi.webServer->arg("fclient");
-        bool ans = napse_fs.saveCredentials(creds);
+        napse.wifi_creds.ssid = wi.webServer->arg("fssid");
+        napse.wifi_creds.psk = wi.webServer->arg("fpsk");
+        napse.wifi_creds.client = wi.webServer->arg("fclient");
+        bool ans = napse_fs.saveCredentials(napse.wifi_creds);
         if (ans) {
             wi.webServer->send(200, "text/html", "<h1>OK Rebooting...</h1>");
             delay(5000);
@@ -160,9 +156,12 @@ void handleConfig() {
 #endif
 
 void setup() {
+    // initial values
+    napse.device_id_returned = false;
+    
     // data
     channel_config = (channel_config_t*) malloc(sizeof(channel_config_t) * MAX_CHANNELS);
-  
+    
     // NeoPixels
     // start on red
     leds.setup(NEOPX_PIN);
@@ -181,6 +180,7 @@ void setup() {
     pinMode(BATT_PIN, INPUT);
 
     Serial.println();
+    Serial.println("🧠 Starting Napse Board...");
     Serial.println("⚡ ADS1299-bridge has started!");
 
     // Start ADS
@@ -210,82 +210,76 @@ void setup() {
     bl.updateBatt(get_batt());
 #else
     Serial.println("🔌 Starting WiFi...");
-    wifi_creds = napse_fs.getCredentials();
-    wi.init(wifi_creds);
+    napse.wifi_creds = napse_fs.getCredentials();
+    wi.init(napse.wifi_creds);
     Serial.println("📡 Started WiFi...");
     // start webserver
     wi.webServer->on("/", handleRoot);
     wi.webServer->on("/config", handleConfig);
     wi.webServer->begin();
-    Serial.print("🪧 Client address: ");
+    Serial.print("🪧 Client address:");
     Serial.println(wi.wifi_credentials.client);
 #endif
 
+
+    // Info
+    Serial.print("🪪 ID: ");
+    Serial.println(ADS.getDeviceID(), BIN); // Function to return Device ID
+#ifdef DEBUG_ON
+    // prints dashed line to separate serial print sections
+    Serial.println("----------------------------------------------");
+    // Read ADS1299 Register at address 0x00 (see Datasheet pg. 35 for more info on SPI commands)
+    int reg;
+    reg = ADS.readRegister(0x00);
+    ADS.printRegisterName(0x00);
+    ADS.printRegister(reg);
+    Serial.println("----------------------------------------------");
+
+    for (int addr = 0x01; addr < 0x18; addr++) {
+        reg = ADS.readRegister(addr);
+        ADS.printRegisterName(addr);
+        ADS.printRegister(reg);
+    }
+    Serial.println("----------------------------------------------");
+
+    // Write register command (see Datasheet pg. 38 for more info about writeRegister)
+    ADS.writeRegister(ADS1299_CONFIG1, 0b11010110);
+    Serial.print("Register 0x");
+    Serial.print(ADS1299_CONFIG1, HEX);
+    Serial.println(" modified.");
+    Serial.println("----------------------------------------------");
+
+    // Repeat PRINT ALL REGISTERS to verify changes
+    for (int addr = 0x01; addr < 0x18; addr++) {
+        reg = ADS.readRegister(addr);
+        ADS.printRegisterName(addr);
+        ADS.printRegister(reg);
+    }
+    Serial.println("----------------------------------------------");
+#endif
+    // initial configuration
+    configureADS();
+
+    Serial.print("🔋 Batt: ");
+    Serial.println(get_batt());
+
+    Serial.println("----------------------------------------------");
+
     // ok, show it
 #ifdef USE_BLE
-    init_color = COLOR_INIT_BLE;
+    napse.init_color = COLOR_INIT_BLE;
 #else
     if (wi.wifi_mode == NAPSE_WIFI_MODE_STA) {
-        init_color = COLOR_INIT_STA;
+        napse.init_color = COLOR_INIT_STA;
     } else {
-        init_color = COLOR_INIT_AP;
+        napse.init_color = COLOR_INIT_AP;
     }
 #endif
-    leds.set(init_color);
+    leds.set(napse.init_color);
+
 }
 
 void loop() {
-    // First run
-    if (device_id_returned == false)
-    {
-        Serial.print("🪪 ID: ");
-        Serial.println(ADS.getDeviceID(), BIN); // Function to return Device ID
-#ifdef DEBUG_ON
-        // prints dashed line to separate serial print sections
-        Serial.println("----------------------------------------------");
-        // Read ADS1299 Register at address 0x00 (see Datasheet pg. 35 for more info on SPI commands)
-        int reg;
-        reg = ADS.readRegister(0x00);
-        ADS.printRegisterName(0x00);
-        ADS.printRegister(reg);
-        Serial.println("----------------------------------------------");
-
-        for (int addr = 0x01; addr < 0x18; addr++)
-        {
-            reg = ADS.readRegister(addr);
-            ADS.printRegisterName(addr);
-            ADS.printRegister(reg);
-        }
-        Serial.println("----------------------------------------------");
-
-        // Write register command (see Datasheet pg. 38 for more info about writeRegister)
-        ADS.writeRegister(ADS1299_CONFIG1, 0b11010110);
-        Serial.print("Register 0x");
-        Serial.print(ADS1299_CONFIG1, HEX);
-        Serial.println(" modified.");
-        Serial.println("----------------------------------------------");
-
-        // Repeat PRINT ALL REGISTERS to verify changes
-        for (int addr = 0x01; addr < 0x18; addr++)
-        {
-            reg = ADS.readRegister(addr);
-            ADS.printRegisterName(addr);
-            ADS.printRegister(reg);
-        }
-        Serial.println("----------------------------------------------");
-#endif
-        // initial configuration
-        configureADS();
-
-        Serial.print("🔋 Batt: ");
-        Serial.println(get_batt());
-
-        Serial.println("----------------------------------------------");
-
-        // Start data conversions command
-        device_id_returned = true;
-    }
-
     // reset marker
     channel_data[10] = 0;
     
@@ -297,43 +291,43 @@ void loop() {
                     Serial.println("Log start");
                     leds.set(COLOR_READ);
                     ADS.START();
+                    start_stop = NAPSE_DATA_START;
                     break;
                 case 's':
                     Serial.println("Log stop");
-                    leds.set(init_color);
+                    leds.set(napse.init_color);
                     ADS.STOP();
+                    start_stop = NAPSE_DATA_STOP;
                     break;
                 case 'p':
                     printADSConfig();
                     break;
             }
     }
-  
+
+#ifdef USE_BLE
     // BLE commands
     if (start_stop_changed) {
-        if (start_stop == 0) {
-            leds.set(init_color);
+        if (start_stop == NAPSE_DATA_STOP) {
+            leds.set(napse.init_color);
             ADS.STOP();
-#ifdef USE_BLE
             bl.updateBatt(get_batt());
-#endif
         } else {
-#ifdef USE_BLE
             bl.updateBatt(get_batt());
-#endif
             leds.set(COLOR_READ);
             ADS.START();
         }
         start_stop_changed = false;
     }
+#endif
+    
 
-
-// WiFi commands
+    // WiFi commands
 #ifndef USE_BLE
     WiFiClient c = wi.client();
     if (c) {
         while (c.connected()) {
-            do_delay = true;
+            napse.do_delay = true;
             while (c.available()>0) {
                 char ch = c.read();
                 switch (ch) {
@@ -341,37 +335,59 @@ void loop() {
                     // need to be fast
                     ch = c.read();
                     channel_data[10] = ch;
-                    do_delay = false;
+                    napse.do_delay = false;
                     break;
                 case WIFI_COMMAND_START:
                     // start
                     leds.set(COLOR_READ);
                     ADS.START();
+                    start_stop = NAPSE_DATA_START;
                     break;
                 case WIFI_COMMAND_STOP:
                     // stop
-                    leds.set(init_color);
+                    leds.set(napse.init_color);
                     ADS.STOP();
+                    start_stop = NAPSE_DATA_STOP;
+                    break;
+                case WIFI_COMMAND_PWUP:
+                    ch = c.read();
+                    ADS.channelPowerUp(ch);
+                    break;
+                case WIFI_COMMAND_PWDN:
+                    ch = c.read();
+                    ADS.channelPowerDown(ch);
                     break;
                 case WIFI_COMMAND_INFO:
                     // send info
                     c.write(NUM_CHANNELS);
                     break;
                 case WIFI_COMMAND_BATT:
-                    batt = get_batt();
-                    c.write((uint8_t*) &batt, sizeof(float));
+                    napse.batt = get_batt();
+                    c.write((uint8_t*) &napse.batt, sizeof(float));
                     break;
                 case WIFI_COMMAND_CLIENT:
-                    client_ip = c.readStringUntil('\n');
-                    wi.wifi_credentials.client = client_ip;
+                    napse.client_ip = c.readStringUntil('\n');
+                    wi.wifi_credentials.client = napse.client_ip;
                     napse_fs.saveCredentials(wi.wifi_credentials);
+                    break;
+                case WIFI_COMMAND_TEST:
+                    ch = c.read();
+                    ADS.channelInputMode(ch, CH_TEST);
+                    break;
+                case WIFI_COMMAND_NORMAL:
+                    ch = c.read();
+                    ADS.channelInputMode(ch, CH_NORMAL);
+                    break;
+                case WIFI_COMMAND_GROUND:
+                    ch = c.read();
+                    ADS.channelInputMode(ch, CH_SHORTED);
                     break;
                 default:
                     break;
                 }
                 c.write(ch);
             }
-            if (do_delay) {
+            if (napse.do_delay) {
                 delay(10);
             }
         }
@@ -388,7 +404,7 @@ void loop() {
 
     // get data if available (only when ADS is in START mode)
     if (ADS.updateData(&last_data)) {
-            ADS.printData(last_data);
+        //ADS.printData(last_data);
             channel_data[0] = last_data.numPacket;
             channel_data[1] = last_data.status;
             channel_data[2] = last_data.chan1;
@@ -411,8 +427,10 @@ void loop() {
     }
 
 #ifndef USE_BLE
-    // if we are in WiFi Mode, handle the webserver
-    wi.webServer->handleClient();
+    // if we are in WiFi Mode, handle the webserver (only if not logging)
+    if (start_stop == NAPSE_DATA_STOP) { 
+        wi.webServer->handleClient();
+    }
 #endif
   
 }
