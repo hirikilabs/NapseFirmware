@@ -240,21 +240,7 @@ void setup() {
         ADS.printRegisterName(addr);
         ADS.printRegister(reg);
     }
-    Serial.println("----------------------------------------------");
 
-    // Write register command (see Datasheet pg. 38 for more info about writeRegister)
-    ADS.writeRegister(ADS1299_CONFIG1, 0b11010110);
-    Serial.print("Register 0x");
-    Serial.print(ADS1299_CONFIG1, HEX);
-    Serial.println(" modified.");
-    Serial.println("----------------------------------------------");
-
-    // Repeat PRINT ALL REGISTERS to verify changes
-    for (int addr = 0x01; addr < 0x18; addr++) {
-        reg = ADS.readRegister(addr);
-        ADS.printRegisterName(addr);
-        ADS.printRegister(reg);
-    }
     Serial.println("----------------------------------------------");
 #endif
     // initial configuration
