@@ -57,9 +57,9 @@ void printADSConfig() {
     Serial.println("----------------------------------------------");
 
     for (int addr = 0x01; addr < 0x18; addr++) {
-            reg = ADS.readRegister(addr);
-            ADS.printRegisterName(addr);
-            ADS.printRegister(reg);
+        reg = ADS.readRegister(addr);
+        ADS.printRegisterName(addr);
+        ADS.printRegister(reg);
     }
     Serial.println("----------------------------------------------");
 }
@@ -271,24 +271,24 @@ void loop() {
     
     // serial commands
     if (Serial.available() > 0) {
-            int command = Serial.read();
-            switch (command) {
-                case 'l':
-                    Serial.println("Log start");
-                    leds.set(COLOR_READ);
-                    ADS.START();
-                    start_stop = NAPSE_DATA_START;
-                    break;
-                case 's':
-                    Serial.println("Log stop");
-                    leds.set(napse.init_color);
-                    ADS.STOP();
-                    start_stop = NAPSE_DATA_STOP;
-                    break;
-                case 'p':
-                    printADSConfig();
-                    break;
-            }
+        int command = Serial.read();
+        switch (command) {
+        case 'l':
+            Serial.println("Log start");
+            leds.set(COLOR_READ);
+            ADS.START();
+            start_stop = NAPSE_DATA_START;
+            break;
+        case 's':
+            Serial.println("Log stop");
+            leds.set(napse.init_color);
+            ADS.STOP();
+            start_stop = NAPSE_DATA_STOP;
+            break;
+        case 'p':
+            printADSConfig();
+            break;
+        }
     }
 
 #ifdef USE_BLE
@@ -391,24 +391,24 @@ void loop() {
     // get data if available (only when ADS is in START mode)
     if (ADS.updateData(&last_data)) {
         //ADS.printData(last_data);
-            channel_data[0] = last_data.numPacket;
-            channel_data[1] = last_data.status;
-            channel_data[2] = last_data.chan1;
-            channel_data[3] = last_data.chan2;
-            channel_data[4] = last_data.chan3;
-            channel_data[5] = last_data.chan4;
-            if (ADS.numCh > 4) {
-                channel_data[6] = last_data.chan5;
-                channel_data[7] = last_data.chan6;
-            }
-            if (ADS.numCh > 6) {
-                channel_data[8] = last_data.chan7;
-                channel_data[9] = last_data.chan8;
-            }
+        channel_data[0] = last_data.numPacket;
+        channel_data[1] = last_data.status;
+        channel_data[2] = last_data.chan1;
+        channel_data[3] = last_data.chan2;
+        channel_data[4] = last_data.chan3;
+        channel_data[5] = last_data.chan4;
+        if (ADS.numCh > 4) {
+            channel_data[6] = last_data.chan5;
+            channel_data[7] = last_data.chan6;
+        }
+        if (ADS.numCh > 6) {
+            channel_data[8] = last_data.chan7;
+            channel_data[9] = last_data.chan8;
+        }
 #ifdef USE_BLE
-            bl.updateData(channel_data);
+        bl.updateData(channel_data);
 #else
-            wi.sendData(channel_data);
+        wi.sendData(channel_data);
 #endif
     }
 
