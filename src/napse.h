@@ -42,6 +42,7 @@
 #define WIFI_COMMAND_NORMAL    0xAA
 #define WIFI_COMMAND_BATT      0xBB
 #define WIFI_COMMAND_CLIENT    0xCC
+#define WIFI_COMMAND_IMPEDANCE 0xDD
 
 // Data Logging
 #define NAPSE_DATA_STOP        0

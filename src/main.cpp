@@ -43,7 +43,7 @@ NapseWifi wi;                           // WiFi object
 NapseLEDs leds;
 
 // Print current ADS config to the serial port
-void printADSConfig() {
+void print_ADS_config() {
     Serial.println(ADS.getDeviceID(), BIN); // Function to return Device ID
 
     // prints dashed line to separate serial print sections
@@ -73,7 +73,7 @@ float get_batt() {
 }
 
 // parse and apply channel configuration
-void parseConfig(channel_config_t* config) {
+void parse_config(channel_config_t* config) {
     for (int i=0; i<MAX_CHANNELS; i++) {
         // shortcircuit mode
         if (config[i] & 0x01) {
@@ -90,7 +90,7 @@ void parseConfig(channel_config_t* config) {
 }
 
 // Initial ADS configuration
-void configureADS() {
+void configure_ADS_reading() {
     // Basic configuration
     //ADS.writeRegister(ADS1299_CONFIG1, 0b11010110); // No daisy, Clock output disabled, 250SPS
     
@@ -126,9 +126,22 @@ void configureADS() {
     //ADS.writeRegister(ADS1299_MISC1, SRB1_NEG_INPUTS);
 }
 
+void configure_ADS_leadoff() {
+    // Lead off detection comparators enabled
+    ADS.writeRegister(ADS1299_CONFIG4, 0b00000010);
+    // enable positive side of channels for lead off detection
+    if (ADS.numCh == ADS1299_4CH) {
+        ADS.writeRegister(ADS1299_LOFF_SENSP, 0b00001111);
+    } else if (ADS.numCh == ADS1299_6CH) {
+        ADS.writeRegister(ADS1299_LOFF_SENSP, 0b00111111);
+    } else {
+        ADS.writeRegister(ADS1299_LOFF_SENSP, 0b11111111);
+    }
+}
+
 #ifndef USE_BLE
 // WebServer handles
-void handleRoot() {
+void handle_root() {
     serverRootHTML.replace("%%SSID%%", wi.wifi_credentials.ssid);
     serverRootHTML.replace("%%PSK%%", wi.wifi_credentials.psk);
     serverRootHTML.replace("%%CLIENT%%", wi.wifi_credentials.client);
@@ -136,7 +149,7 @@ void handleRoot() {
 }
 
 // handle web configuration form data
-void handleConfig() {
+void handle_config() {
     if (wi.webServer->args() == 3) {
         napse.wifi_creds.ssid = wi.webServer->arg("fssid");
         napse.wifi_creds.psk = wi.webServer->arg("fpsk");
@@ -167,7 +180,7 @@ void setup() {
     leds.setup(NEOPX_PIN);
     leds.set(COLOR_ERR);
 
-    // ???
+    // delay for debugging so we can see the boot messages
     delay(3000);
 
     Serial.begin(115200);
@@ -214,8 +227,8 @@ void setup() {
     wi.init(napse.wifi_creds);
     Serial.println("📡 Started WiFi...");
     // start webserver
-    wi.webServer->on("/", handleRoot);
-    wi.webServer->on("/config", handleConfig);
+    wi.webServer->on("/", handle_root);
+    wi.webServer->on("/config", handle_config);
     wi.webServer->begin();
     Serial.print("🪧 Client address:");
     Serial.println(wi.wifi_credentials.client);
@@ -244,7 +257,7 @@ void setup() {
     Serial.println("----------------------------------------------");
 #endif
     // initial configuration
-    configureADS();
+    configure_ADS_reading();
 
     Serial.print("🔋 Batt: ");
     Serial.println(get_batt());
@@ -286,7 +299,7 @@ void loop() {
             start_stop = NAPSE_DATA_STOP;
             break;
         case 'p':
-            printADSConfig();
+            print_ADS_config();
             break;
         }
     }
@@ -368,6 +381,9 @@ void loop() {
                     ch = c.read();
                     ADS.channelInputMode(ch, CH_SHORTED);
                     break;
+                case WIFI_COMMAND_IMPEDANCE:
+                    configure_ADS_leadoff();
+                    break;
                 default:
                     break;
                 }
@@ -385,7 +401,7 @@ void loop() {
 
     // if BLE or WiFi changed device configuration, apply it
     if (config_changed) {
-        parseConfig(channel_config);
+        parse_config(channel_config);
     }
 
     // get data if available (only when ADS is in START mode)
