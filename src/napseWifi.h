@@ -38,6 +38,7 @@ class NapseWifi {
     //WiFiUDP *udp;
     WiFiManager *wifiManager;
     String clientIP;
+    bool saveConfig;
     const char* udpAddress;
     void createAPPortal();
 public:

@@ -12,7 +12,7 @@ WiFiServer tcp;
 
 char client_ip[16] = "0.0.0.0";
 
-//flag for saving data
+//
 bool shouldSaveConfig = false;
 bool enteredConfigMode = false;
 
@@ -70,6 +70,11 @@ bool NapseWifi::init() {
         
         tcp.begin(NAPSE_TCP_PORT);
         udp.begin(WiFi.softAPIP(), NAPSE_UDP_PORT);
+    }
+
+    // need to save client ip?
+    if (shouldSaveConfig) {
+        
     }
 
     // mDNS (napse.local)

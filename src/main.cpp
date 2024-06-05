@@ -150,17 +150,15 @@ void handle_root() {
 
 // handle web configuration form data
 void handle_config() {
-    if (wi.webServer->args() == 3) {
-        napse.wifi_creds.ssid = wi.webServer->arg("fssid");
-        napse.wifi_creds.psk = wi.webServer->arg("fpsk");
-        napse.wifi_creds.client = wi.webServer->arg("fclient");
-        bool ans = napse_fs.saveCredentials(napse.wifi_creds);
+    if (wi.webServer->args() == 1) {
+        String ip = wi.webServer->arg("fclient");
+        bool ans = napse_fs.saveClientIP(ip);
         if (ans) {
             wi.webServer->send(200, "text/html", "<h1>OK Rebooting...</h1>");
             delay(5000);
             ESP.restart();
         } else {
-            wi.webServer->send(500, "text/plain", "Problem saving credentials");
+            wi.webServer->send(500, "text/plain", "Problem saving Client IP");
         }    
     } else {
         wi.webServer->send(500, "text/plain", "Problem with parameters");
