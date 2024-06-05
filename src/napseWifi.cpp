@@ -9,7 +9,6 @@
 
 WiFiUDP udp;
 WiFiServer tcp;
-WiFiManager wifiManager;
 
 char client_ip[16] = "0.0.0.0";
 
@@ -26,6 +25,7 @@ void saveConfigCallback () {
 void configModeCallback (WiFiManager *myWiFiManager) {
     //wifi_mode = NAPSE_WIFI_MODE_AP;
     enteredConfigMode = true;
+    Serial.println("\n🛜 Can't connect to AP, creating wifi: ");
 }
 
 bool NapseWifi::init() {
@@ -33,23 +33,27 @@ bool NapseWifi::init() {
     wifi_mode = NAPSE_WIFI_MODE_STA;
     int timeout = 0;
 
+    // create wifimanager
+    wifiManager = new WiFiManager();
+
     // create Wifi AP name
     char ssid[25];
     uint64_t chip_id = ESP.getEfuseMac();
     snprintf(ssid, 25, "NAPSE-%llX", chip_id);
 
     // configure WifiManager
-    wifiManager.setTitle("🧠 Napse Board");
-    wifiManager.setAPCallback(configModeCallback);
+    wifiManager->setTitle("🧠 Napse Board");
+    wifiManager->setAPCallback(configModeCallback);
     WiFiManagerParameter client_ip_param("clientip", "Client IP", client_ip, 15);
-    wifiManager.addParameter(&client_ip_param);
-    wifiManager.setCustomHeadElement("<style>body{color: #ff9bfd; background-color: #494c88; font-family: sans-serif; font-size: 2vh;}\
+    wifiManager->addParameter(&client_ip_param);
+    wifiManager->setClass("invert"); // dark theme
+    wifiManager->setCustomHeadElement("<style>body{color: #ff9bfd; background-color: #494c88; font-family: sans-serif; font-size: 2vh;}\
     h1{font-size: 5vh;} h2{font-size: 3vh;} input{font-size: 2vh;}</style>");
     
     // try to connect in STA mode
     // if conection fails, create the AP Portal.
     Serial.println("❓ Trying to connect to saved WiFis: ");
-    wifiManager.autoConnect(ssid);
+    wifiManager->autoConnect(ssid);
 
     // if we connected normally
     if (enteredConfigMode == false) {
