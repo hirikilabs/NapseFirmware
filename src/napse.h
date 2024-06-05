@@ -1,11 +1,16 @@
 #ifndef _NAPSE_H
 #define _NAPSE_H
 
+#include <Arduino.h>
 #include <inttypes.h>
 
 // Configuration
-#define NUM_CHANNELS    4
+#define NUM_CHANNELS    6
 #define MAX_CHANNELS    8
+
+// LED Type (GRB or RGB)
+#define LED_TYPE_RGB
+//#define LED_TYPE_GRB
 
 // GPIO and utility
 #define DRDY_PIN        10
@@ -13,7 +18,7 @@
 #define BATT_PIN        1
 #define BATT_DIVISION   3.0
 #define BATT_CORRECTION 0.965
-#define NEOPX_PIN       8
+#define NEOPX_PIN       0
 
 // LED color values
 #define COLOR_ERR       0xCC0000

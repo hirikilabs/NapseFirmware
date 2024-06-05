@@ -1,6 +1,8 @@
 #ifndef _LEDS_H
 #define _LEDS_H
 
+#include "napse.h"
+
 #include <Adafruit_NeoPixel.h>
 
 #define NAPSE_LED_NUMBER 1
