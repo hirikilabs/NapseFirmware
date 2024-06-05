@@ -224,7 +224,7 @@ void setup() {
 #else
     Serial.println("🔌 Starting WiFi...");
     napse.wifi_creds = napse_fs.getCredentials();
-    wi.init(napse.wifi_creds);
+    wi.init();
     Serial.println("📡 Started WiFi...");
     // start webserver
     wi.webServer->on("/", handle_root);

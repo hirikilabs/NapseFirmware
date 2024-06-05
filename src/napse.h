@@ -13,7 +13,7 @@
 #define BATT_PIN        1
 #define BATT_DIVISION   3.0
 #define BATT_CORRECTION 0.965
-#define NEOPX_PIN       0
+#define NEOPX_PIN       8
 
 // LED color values
 #define COLOR_ERR       0xCC0000

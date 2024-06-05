@@ -9,41 +9,51 @@
 
 WiFiUDP udp;
 WiFiServer tcp;
+WiFiManager wifiManager;
 
-bool NapseWifi::init(napse_wifi_credentials_t creds) {
+char client_ip[16] = "0.0.0.0";
+
+//flag for saving data
+bool shouldSaveConfig = false;
+bool enteredConfigMode = false;
+
+// callback notifying us of the need to save config
+void saveConfigCallback () {
+  Serial.println("Should save config");
+  shouldSaveConfig = true;
+}
+
+void configModeCallback (WiFiManager *myWiFiManager) {
+    //wifi_mode = NAPSE_WIFI_MODE_AP;
+    enteredConfigMode = true;
+}
+
+bool NapseWifi::init() {
     // try to conenct to WiFi
     wifi_mode = NAPSE_WIFI_MODE_STA;
     int timeout = 0;
 
-    // if we have saved credentials, try to connect in STA mode
-    // if conection fails, create the AP Portal.
-    if (creds.ok) {
-        Serial.print("❓ Trying to connect to: ");
-        Serial.print(creds.ssid);
-        Serial.print(" : ");
-        Serial.println(creds.psk);
-        WiFi.begin(creds.ssid, creds.psk);
-        // Wait for connection
-        while (WiFi.status() != WL_CONNECTED) {
-            delay(500);
-            Serial.print(".");
-            timeout++;
-            if (timeout > 10) {
-                createAPPortal();
-                break;
-            }
-        }
-        // ok, connected
-    } else {
-        createAPPortal();
-    }
+    // create Wifi AP name
+    char ssid[25];
+    uint64_t chip_id = ESP.getEfuseMac();
+    snprintf(ssid, 25, "NAPSE-%llX", chip_id);
 
-    // store wifi credentials (important for client)
-    wifi_credentials = creds;
-    udpAddress = wifi_credentials.client.c_str();
+    // configure WifiManager
+    wifiManager.setTitle("🧠 Napse Board");
+    wifiManager.setAPCallback(configModeCallback);
+    WiFiManagerParameter client_ip_param("clientip", "Client IP", client_ip, 15);
+    wifiManager.addParameter(&client_ip_param);
+    wifiManager.setCustomHeadElement("<style>body{color: #ff9bfd; background-color: #494c88; font-family: sans-serif; font-size: 2vh;}\
+    h1{font-size: 5vh;} h2{font-size: 3vh;} input{font-size: 2vh;}</style>");
     
+    // try to connect in STA mode
+    // if conection fails, create the AP Portal.
+    Serial.println("❓ Trying to connect to saved WiFis: ");
+    wifiManager.autoConnect(ssid);
+
     // if we connected normally
-    if (wifi_mode == NAPSE_WIFI_MODE_STA) {
+    if (enteredConfigMode == false) {
+        wifi_mode = NAPSE_WIFI_MODE_STA;
         Serial.println("");
         Serial.print("✅ Connected to ");
         Serial.println(WiFi.SSID());
@@ -52,6 +62,8 @@ bool NapseWifi::init(napse_wifi_credentials_t creds) {
         tcp.begin(NAPSE_TCP_PORT);
         udp.begin(WiFi.localIP(), NAPSE_UDP_PORT);
     } else {
+        wifi_mode = NAPSE_WIFI_MODE_AP;
+        
         tcp.begin(NAPSE_TCP_PORT);
         udp.begin(WiFi.softAPIP(), NAPSE_UDP_PORT);
     }

@@ -7,6 +7,7 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <SPIFFS.h>
+#include <WiFiManager.h> 
 
 #include "napse.h"
 
@@ -21,7 +22,7 @@
 #define PACKET_DST    0xDD
 
 #define WIFI_SSID "HIRIKILABS"
-#define WIFI_PSK  "Hal.20223"
+#define WIFI_PSK  "Hal.2023"
 
 #define WIFI_AP_PSK "napse1234"
 
@@ -43,7 +44,7 @@ public:
     napse_wifi_mode_t wifi_mode;
     WebServer *webServer;
 
-    bool init(napse_wifi_credentials_t creds);
+    bool init();
     void sendData(uint32_t data[]);
     WiFiClient client();
 };
