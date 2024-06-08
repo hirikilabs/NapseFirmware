@@ -23,7 +23,6 @@
 
 #include "leds.h"
 
-
 channel_data_t last_data;               // last data received from the ADS
 uint32_t channel_data[11];              // data to send
 uint16_t start_stop = NAPSE_DATA_STOP;  // start/stop logging flag
@@ -197,7 +196,7 @@ void setup() {
     Serial.println("⚡ ADS1299-bridge has started!");
 
     // Start ADS
-    ADS.setup(DRDY_PIN, ADS1299_4CH);   // (DRDY pin, num of channels);
+    ADS.setup(DRDY_PIN, NUM_CHANNELS);   // (DRDY pin, num of channels);
     delay(10);                          // delay to ensure connection
 
     Serial.println("⚙️ ADS1299-bridge configured!");
@@ -217,7 +216,7 @@ void setup() {
     // BLEServer
 #ifdef USE_BLE
     Serial.println("🔌 Starting BLE...");
-    bl.setup(ADS1299_4CH);
+    bl.setup(NUM_CHANNELS);
     Serial.println("📡 Started BLE...");
     // update battery value
     bl.updateBatt(get_batt());
