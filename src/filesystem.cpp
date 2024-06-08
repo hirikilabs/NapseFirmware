@@ -47,7 +47,31 @@ napse_wifi_credentials_t NapseFilesystem::getCredentials() {
         return creds;
     }
 }
-    
+
+String NapseFilesystem::getClientIP() {
+    String client;
+
+    // try to read credentials
+    File file = SPIFFS.open(WIFI_CLIENT_FILE);
+    if(!file || file.isDirectory()){
+       Serial.println("❌ failed to open Client IP file");
+       client = "0.0.0.0";
+       return client;
+    } else {
+        // read the values
+        client = file.readStringUntil('\n');
+        file.close();
+        // we have an IP?
+        if (client == "") {
+            client = "0.0.0.0";
+            return client;
+        }
+        
+        return client;
+    }
+}
+
+
 bool NapseFilesystem::saveCredentials(napse_wifi_credentials_t credentials) {
     File file = SPIFFS.open(WIFI_CREDS_FILE, FILE_WRITE);
     if(!file){
@@ -59,6 +83,19 @@ bool NapseFilesystem::saveCredentials(napse_wifi_credentials_t credentials) {
         file.print(credentials.psk);
         file.write('\n');
         file.print(credentials.client);
+        file.write('\n');
+        file.close();
+        return true;
+    }
+}
+
+bool NapseFilesystem::saveClientIP(String client) {
+    File file = SPIFFS.open(WIFI_CLIENT_FILE, FILE_WRITE);
+    if(!file){
+      Serial.println("❌ failed to open Client IP file for writing");
+      return false;
+    } else {
+        file.print(client);
         file.write('\n');
         file.close();
         return true;

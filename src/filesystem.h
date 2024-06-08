@@ -11,7 +11,9 @@ class NapseFilesystem {
 public:
     bool init();
     napse_wifi_credentials_t getCredentials();
+    String getClientIP();
     bool saveCredentials(napse_wifi_credentials_t credentials);
+    bool saveClientIP(String ip);
 };
 
 #endif
