@@ -2,6 +2,7 @@
 #define _LEDS_H
 
 #include <Adafruit_NeoPixel.h>
+#include "napse.h"
 
 #define NAPSE_LED_NUMBER 1
 

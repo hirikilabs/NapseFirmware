@@ -3,7 +3,11 @@
 // start NeoPixels
 void NapseLEDs::setup(uint8_t _pin) {
   pin = _pin;
+#ifdef LED_TYPE_RGB
+  strip = Adafruit_NeoPixel(NAPSE_LED_NUMBER, pin, NEO_RGB + NEO_KHZ800);
+#else
   strip = Adafruit_NeoPixel(NAPSE_LED_NUMBER, pin, NEO_GRB + NEO_KHZ800);
+#endif
   strip.begin();
   strip.clear();
   strip.setBrightness(100);

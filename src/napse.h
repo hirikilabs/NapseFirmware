@@ -4,8 +4,10 @@
 #include <inttypes.h>
 
 // Configuration
-#define NUM_CHANNELS    4
+#define NUM_CHANNELS    6
 #define MAX_CHANNELS    8
+
+#define LED_TYPE_RGB
 
 // GPIO and utility
 #define DRDY_PIN        10
