@@ -35,18 +35,14 @@ typedef enum {
 } napse_wifi_mode_t;
 
 class NapseWifi {
-    //WiFiUDP *udp;
     WiFiManager *wifiManager;
-    String clientIP;
-    bool saveConfig;
-    const char* udpAddress;
     void createAPPortal();
 public:
-    napse_wifi_credentials_t wifi_credentials;
+    String clientIP;
+    bool saveConfig;
     napse_wifi_mode_t wifi_mode;
     WebServer *webServer;
-
-    bool init();
+    bool init(String client_ip);
     void sendData(uint32_t data[]);
     WiFiClient client();
 };

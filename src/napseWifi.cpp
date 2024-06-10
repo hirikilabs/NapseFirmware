@@ -10,15 +10,13 @@
 WiFiUDP udp;
 WiFiServer tcp;
 
-char client_ip[16] = "0.0.0.0";
-
-//
+// flags
 bool shouldSaveConfig = false;
 bool enteredConfigMode = false;
 
 // callback notifying us of the need to save config
 void saveConfigCallback () {
-  Serial.println("Should save config");
+  Serial.println("⚠️ Should save config");
   shouldSaveConfig = true;
 }
 
@@ -28,10 +26,11 @@ void configModeCallback (WiFiManager *myWiFiManager) {
     Serial.println("\n🛜 Can't connect to AP, creating wifi: ");
 }
 
-bool NapseWifi::init() {
+bool NapseWifi::init(String client_ip) {
     // try to conenct to WiFi
     wifi_mode = NAPSE_WIFI_MODE_STA;
     int timeout = 0;
+    saveConfig = false;
 
     // create wifimanager
     wifiManager = new WiFiManager();
@@ -44,7 +43,7 @@ bool NapseWifi::init() {
     // configure WifiManager
     wifiManager->setTitle("🧠 Napse Board");
     wifiManager->setAPCallback(configModeCallback);
-    WiFiManagerParameter client_ip_param("clientip", "Client IP", client_ip, 15);
+    WiFiManagerParameter client_ip_param("clientip", "Client IP", client_ip.c_str(), 15);
     wifiManager->addParameter(&client_ip_param);
     wifiManager->setClass("invert"); // dark theme
     wifiManager->setCustomHeadElement("<style>body{color: #ff9bfd; background-color: #494c88; font-family: sans-serif; font-size: 2vh;}\
@@ -74,7 +73,8 @@ bool NapseWifi::init() {
 
     // need to save client ip?
     if (shouldSaveConfig) {
-        
+        saveConfig = true;
+        clientIP = client_ip_param.getValue();
     }
 
     // mDNS (napse.local)
@@ -89,24 +89,10 @@ bool NapseWifi::init() {
     return true;
 }
 
-// Create a WiFi network in AP mode
-void NapseWifi::createAPPortal() {
-    Serial.print("\n🛜 Can't connect to AP, creating wifi: ");
-    // create Wifi name
-    char ssid[25];
-    uint64_t chip_id = ESP.getEfuseMac();
-    snprintf(ssid, 25, "NAPSE-%llX", chip_id);
-    WiFi.mode(WIFI_AP);
-    WiFi.softAP(ssid, WIFI_AP_PSK);
-    Serial.println(WiFi.softAPSSID());
-    Serial.print("💻 AP IP address: ");
-    Serial.println(WiFi.softAPIP());
-    wifi_mode = NAPSE_WIFI_MODE_AP;
-}
 
 // Send data via UDP
 void NapseWifi::sendData(uint32_t data[]) {
-    udp.beginPacket(udpAddress, 31337);
+    udp.beginPacket(clientIP.c_str(), 31337);
     udp.write((uint8_t *)data, 44);
     udp.endPacket();
 }

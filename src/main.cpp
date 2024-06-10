@@ -142,9 +142,7 @@ void configure_ADS_leadoff() {
 #ifndef USE_BLE
 // WebServer handles
 void handle_root() {
-    serverRootHTML.replace("%%SSID%%", wi.wifi_credentials.ssid);
-    serverRootHTML.replace("%%PSK%%", wi.wifi_credentials.psk);
-    serverRootHTML.replace("%%CLIENT%%", wi.wifi_credentials.client);
+    serverRootHTML.replace("%%CLIENT%%", wi.clientIP);
     wi.webServer->send(200, "text/html", serverRootHTML);
 }
 
@@ -221,15 +219,19 @@ void setup() {
     bl.updateBatt(get_batt());
 #else
     Serial.println("🔌 Starting WiFi...");
-    napse.wifi_creds = napse_fs.getCredentials();
-    wi.init();
+    napse.client_ip = napse_fs.getClientIP();
+    wi.init(napse.client_ip);
+    if (wi.saveConfig) {
+        napse_fs.saveClientIP(wi.clientIP);
+        napse.client_ip = wi.clientIP;
+    }
     Serial.println("📡 Started WiFi...");
     // start webserver
     wi.webServer->on("/", handle_root);
     wi.webServer->on("/config", handle_config);
     wi.webServer->begin();
     Serial.print("🪧 Client address:");
-    Serial.println(wi.wifi_credentials.client);
+    Serial.println(wi.clientIP);
 #endif
 
 
@@ -364,8 +366,8 @@ void loop() {
                     break;
                 case WIFI_COMMAND_CLIENT:
                     napse.client_ip = c.readStringUntil('\n');
-                    wi.wifi_credentials.client = napse.client_ip;
-                    napse_fs.saveCredentials(wi.wifi_credentials);
+                    wi.clientIP = napse.client_ip;
+                    napse_fs.saveClientIP(wi.clientIP);
                     break;
                 case WIFI_COMMAND_TEST:
                     ch = c.read();

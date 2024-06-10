@@ -56,21 +56,13 @@
 // Types
 typedef uint8_t channel_config_t;
 
-typedef struct {
-    bool ok;
-    String ssid;
-    String psk;
-    String client;
-} napse_wifi_credentials_t;
-
 
 typedef struct {
     boolean device_id_returned; // ADS ID ok?
     uint32_t init_color;        // LED colors
     bool do_delay;              // need to do delay after wifi command?
-    float batt;                             // battery voltage
-    String client_ip;                       // client UDP address
-    napse_wifi_credentials_t wifi_creds;    // credentials for wifi network 
+    float batt;                 // battery voltage
+    String client_ip;         // client IP address
 } napse_t;
 
 
