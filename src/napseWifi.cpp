@@ -89,6 +89,11 @@ bool NapseWifi::init(String client_ip) {
     return true;
 }
 
+// clear wifimanager saved credentials
+void NapseWifi::clearSettings() {
+    wifiManager->resetSettings();
+}
+
 
 // Send data via UDP
 void NapseWifi::sendData(uint32_t data[]) {

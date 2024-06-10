@@ -36,7 +36,6 @@ typedef enum {
 
 class NapseWifi {
     WiFiManager *wifiManager;
-    void createAPPortal();
 public:
     String clientIP;
     bool saveConfig;
@@ -44,6 +43,7 @@ public:
     WebServer *webServer;
     bool init(String client_ip);
     void sendData(uint32_t data[]);
+    void clearSettings();
     WiFiClient client();
 };
 

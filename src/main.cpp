@@ -162,6 +162,13 @@ void handle_config() {
         wi.webServer->send(500, "text/plain", "Problem with parameters");
     }
 }
+
+void handle_wifi() {
+    wi.clearSettings();
+    wi.webServer->send(200, "text/html", "<h1>Wifi settings erased, rebooting...</h1>");
+    delay(5000);
+    ESP.restart();
+}
 #endif
 
 void setup() {
@@ -229,6 +236,7 @@ void setup() {
     // start webserver
     wi.webServer->on("/", handle_root);
     wi.webServer->on("/config", handle_config);
+    wi.webServer->on("wifi", handle_wifi);
     wi.webServer->begin();
     Serial.print("🪧 Client address:");
     Serial.println(wi.clientIP);
