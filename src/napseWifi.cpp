@@ -14,6 +14,9 @@ WiFiServer tcp;
 bool shouldSaveConfig = false;
 bool enteredConfigMode = false;
 
+// vars
+char temp_ip[15];
+
 // callback notifying us of the need to save config
 void saveConfigCallback () {
   Serial.println("⚠️ Should save config");
@@ -23,7 +26,10 @@ void saveConfigCallback () {
 void configModeCallback (WiFiManager *myWiFiManager) {
     //wifi_mode = NAPSE_WIFI_MODE_AP;
     enteredConfigMode = true;
-    Serial.println("\n🛜 Can't connect to AP, creating wifi: ");
+    Serial.print("\n🛜 Can't connect to AP, creating wifi: ");
+    Serial.print(myWiFiManager->getConfigPortalSSID());
+    Serial.print(" : ");
+    Serial.println(WiFi.softAPIP());
 }
 
 bool NapseWifi::init(String client_ip) {
@@ -41,9 +47,11 @@ bool NapseWifi::init(String client_ip) {
     snprintf(ssid, 25, "NAPSE-%llX", chip_id);
 
     // configure WifiManager
+    wifiManager->setDebugOutput(false);
     wifiManager->setTitle("🧠 Napse Board");
     wifiManager->setAPCallback(configModeCallback);
-    WiFiManagerParameter client_ip_param("clientip", "Client IP", client_ip.c_str(), 15);
+    wifiManager->setSaveConfigCallback(saveConfigCallback);
+    WiFiManagerParameter client_ip_param("clientip", "Client IP", temp_ip, 15);
     wifiManager->addParameter(&client_ip_param);
     wifiManager->setClass("invert"); // dark theme
     wifiManager->setCustomHeadElement("<style>body{color: #ff9bfd; background-color: #494c88; font-family: sans-serif; font-size: 2vh;}\
@@ -51,25 +59,17 @@ bool NapseWifi::init(String client_ip) {
     
     // try to connect in STA mode
     // if conection fails, create the AP Portal.
-    Serial.println("❓ Trying to connect to saved WiFis: ");
+    Serial.println("❓ Trying to connect to saved WiFis...");
     wifiManager->autoConnect(ssid);
 
-    // if we connected normally
-    if (enteredConfigMode == false) {
-        wifi_mode = NAPSE_WIFI_MODE_STA;
-        Serial.println("");
-        Serial.print("✅ Connected to ");
-        Serial.println(WiFi.SSID());
-        Serial.print("💻 IP address: ");
-        Serial.println(WiFi.localIP());
-        tcp.begin(NAPSE_TCP_PORT);
-        udp.begin(WiFi.localIP(), NAPSE_UDP_PORT);
-    } else {
-        wifi_mode = NAPSE_WIFI_MODE_AP;
-        
-        tcp.begin(NAPSE_TCP_PORT);
-        udp.begin(WiFi.softAPIP(), NAPSE_UDP_PORT);
-    }
+    Serial.println("");
+    Serial.print("✅ Connected to ");
+    Serial.println(wifiManager->getWiFiSSID(false));
+    Serial.print("💻 IP address: ");
+    Serial.println(WiFi.localIP());
+    clientIP = client_ip;
+    tcp.begin(NAPSE_TCP_PORT);
+    udp.begin(WiFi.localIP(), NAPSE_UDP_PORT);
 
     // need to save client ip?
     if (shouldSaveConfig) {

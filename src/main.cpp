@@ -150,6 +150,8 @@ void handle_root() {
 void handle_config() {
     if (wi.webServer->args() == 1) {
         String ip = wi.webServer->arg("fclient");
+        Serial.print("📥 Got client IP: ");
+        Serial.println(ip);
         bool ans = napse_fs.saveClientIP(ip);
         if (ans) {
             wi.webServer->send(200, "text/html", "<h1>OK Rebooting...</h1>");
@@ -164,8 +166,8 @@ void handle_config() {
 }
 
 void handle_wifi() {
+    wi.webServer->send(200, "text/html", "<h1>Erasing WiFi settings, rebooting...</h1>");
     wi.clearSettings();
-    wi.webServer->send(200, "text/html", "<h1>Wifi settings erased, rebooting...</h1>");
     delay(5000);
     ESP.restart();
 }
@@ -227,6 +229,9 @@ void setup() {
 #else
     Serial.println("🔌 Starting WiFi...");
     napse.client_ip = napse_fs.getClientIP();
+    Serial.print("📃 Read client IP: ");
+    Serial.println(napse.client_ip);
+    
     wi.init(napse.client_ip);
     if (wi.saveConfig) {
         napse_fs.saveClientIP(wi.clientIP);
@@ -236,7 +241,7 @@ void setup() {
     // start webserver
     wi.webServer->on("/", handle_root);
     wi.webServer->on("/config", handle_config);
-    wi.webServer->on("wifi", handle_wifi);
+    wi.webServer->on("/resetwifi", handle_wifi);
     wi.webServer->begin();
     Serial.print("🪧 Client address:");
     Serial.println(wi.clientIP);
