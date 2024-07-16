@@ -1,5 +1,5 @@
 //#define DEBUG_ON
-//#define USE_BLE
+#define USE_BLE
 
 #include <Arduino.h>
 #include <cstdint>

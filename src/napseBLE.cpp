@@ -95,13 +95,13 @@ bool NapseBLE::setup(int _num_ch) {
   infoDescriptor->setValue("Device ID and number of channels");
   infoDescriptor->setAccessPermissions(ESP_GATT_PERM_READ);
   pCharacteristicInfo->addDescriptor(infoDescriptor);
+
   uint8_t* info;
   info = (uint8_t*) malloc(9);
   memcpy(info, &chip_id, 8);
   info[8] = num_ch;
   pCharacteristicInfo->setValue(info, 9);
   free(info);
-
   
   pCharacteristicData = pService->createCharacteristic(
       CHARACTERISTIC_DATA_UUID,
@@ -156,8 +156,8 @@ bool NapseBLE::setup(int _num_ch) {
   pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->setScanResponse(true);
-  pAdvertising->setMinPreferred(0x06);
-  pAdvertising->setMaxPreferred(0x06);
+  //pAdvertising->setMinPreferred(0x06);
+  //pAdvertising->setMaxPreferred(0x06);
   BLEDevice::startAdvertising();
 
   return true;
