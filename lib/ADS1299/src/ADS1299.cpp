@@ -15,12 +15,12 @@
 
 static const int spiClk = 1000000; // 1 MHz
 
-void ADS1299::setup(int _DRDY, int _numCh)
+void ADS1299::setup(int _SCLK, int _MISO, int _MOSI, int _SS, int _DRDY, int _numCh)
 {
     // **** ----- SPI Setup ----- **** //
     // ESP32 SCLK = 18, MISO = 19, MOSI = 23, SS = 5
     // ESP32C3 SCLK = 4, MISO = 5, MOSI = 6, SS = 7
-    SPI.begin();
+    SPI.begin(_SCLK, _MISO, _MOSI, _SS);
 
     // number of channels
     numCh = _numCh;

@@ -36,7 +36,7 @@ public:
   int numCh;
   uint64_t outputCount;
 
-  void setup(int _DRDY, int _numCh);
+  void setup(int _SCLK, int _MISO, int _MOSI, int _SS, int _DRDY, int _numCh);
     
   //ADS1299 SPI Command Definitions (Datasheet, Pg. 35)
   //System Commands

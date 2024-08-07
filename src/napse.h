@@ -10,12 +10,17 @@
 #define LED_TYPE_RGB
 
 // GPIO and utility
-#define DRDY_PIN        10
-#define ADS_RST_PIN     3
-#define BATT_PIN        1
+#define DRDY_PIN        16
+#define ADS_RST_PIN     17
+#define BATT_PIN        26
 #define BATT_DIVISION   3.0
 #define BATT_CORRECTION 0.965
-#define NEOPX_PIN       0
+#define NEOPX_PIN       4
+
+#define ADC_SCLK        18
+#define ADC_MISO        19
+#define ADC_MOSI        25
+#define ADC_CS          5
 
 // LED color values
 #define COLOR_ERR       0xCC0000

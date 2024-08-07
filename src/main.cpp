@@ -198,7 +198,7 @@ void setup() {
     Serial.println("⚡ ADS1299-bridge has started!");
 
     // Start ADS
-    ADS.setup(DRDY_PIN, NUM_CHANNELS);   // (DRDY pin, num of channels);
+    ADS.setup(ADC_SCLK, ADC_MISO, ADC_MOSI, ADC_CS, DRDY_PIN, NUM_CHANNELS);   // (DRDY pin, num of channels);
     delay(10);                          // delay to ensure connection
 
     Serial.println("⚙️ ADS1299-bridge configured!");
