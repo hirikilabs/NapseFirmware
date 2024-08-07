@@ -168,6 +168,8 @@ void handle_config() {
 #endif
 
 void setup() {
+
+    esp_log_level_set("*", ESP_LOG_DEBUG);
     // initial values
     napse.device_id_returned = false;
     

@@ -10,17 +10,26 @@ extern bool config_changed;
 
 bool deviceConnected = false;
 
-class MyServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *param) {
+void NapseServerCallbacks::onConnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *param) {
       deviceConnected = true;
-      pServer->updateConnParams(param->connect.remote_bda, 0x06, 0x06, 0, 100);
-    };
+      // esp_ble_conn_update_params_t conn_params = {0};
 
-    void onDisconnect(BLEServer* pServer) {
+      // memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
+      // conn_params.latency = 0;
+      // conn_params.max_int = 0x06; // max_int = 0x0c*1.25ms = 15ms
+      // conn_params.min_int = 0x06; // min_int = 0x0c*1.25ms = 15ms
+      // conn_params.timeout = 100;  // timeout = 200*10ms = 2000ms
+      // //start sent the update connection parameters to the peer device.
+      // esp_ble_gap_update_conn_params(&conn_params);
+
+      //pServer->updatePeerMTU(param->connect.conn_id, 42);
+      Serial.println("Connected!");
+};
+
+void NapseServerCallbacks::onDisconnect(BLEServer* pServer) {
       deviceConnected = false;
       pServer->startAdvertising();
-    }
-};
+}
 
 class StartStopCallback: public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
@@ -75,15 +84,16 @@ bool NapseBLE::setup(int _num_ch) {
   num_ch = _num_ch;
 
   // create BL name
-  char blid[23];
+  char blid[25];
   uint64_t chip_id = ESP.getEfuseMac();
-  snprintf(blid, 23, "NIT-BL-%llX", chip_id);
+  snprintf(blid, 25, "NIT-BL-%llX", chip_id);
 
   // init BLE
-  BLEDevice::init(blid);
-  //BLEDevice::setMTU(1024);
+  //BLEDevice::init(blid);
+  BLEDevice::init("NAPSE");
+  
   pServer = BLEDevice::createServer();
-  pServer->setCallbacks(new MyServerCallbacks());
+  pServer->setCallbacks(new NapseServerCallbacks());
   pService = pServer->createService(SERVICE_UUID);
   
   // create characteristics
@@ -111,6 +121,7 @@ bool NapseBLE::setup(int _num_ch) {
   dataDescriptor->setValue("All data as uint8");
   dataDescriptor->setAccessPermissions(ESP_GATT_PERM_READ);
   pCharacteristicData->addDescriptor(dataDescriptor);
+  //pCharacteristicData->notify(false);
 
   pCharacteristicStartStop = pService->createCharacteristic(
       CHARACTERISTIC_START_STOP_UUID,
@@ -152,12 +163,14 @@ bool NapseBLE::setup(int _num_ch) {
   // start service
   pService->start();
 
+
+  //BLEDevice.
+  
   // advertising
   pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->setScanResponse(true);
-  //pAdvertising->setMinPreferred(0x06);
-  //pAdvertising->setMaxPreferred(0x06);
+  //BLEDevice::setMTU(45);
   BLEDevice::startAdvertising();
 
   return true;

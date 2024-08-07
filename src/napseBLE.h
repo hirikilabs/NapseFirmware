@@ -6,9 +6,16 @@
 #include <BLEServer.h>
 #include "napse.h"
 
-class NapseBLE {
-  int num_ch;
+class NapseServerCallbacks: public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *param);
+    void onDisconnect(BLEServer* pServer);
+};
 
+
+class NapseBLE {
+    int num_ch;
+    NapseServerCallbacks* serverCallbacks;
+    
   public:
     BLEServer* pServer;
     BLEService* pService;
@@ -27,7 +34,6 @@ class NapseBLE {
   bool setup(int _num_ch);
   void updateData(uint32_t data[]);
   void updateBatt(float battv);
-
 };
 
 
