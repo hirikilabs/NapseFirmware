@@ -278,7 +278,7 @@ void setup() {
 
 void loop() {
     // reset marker
-    channel_data[PACKET_FIELD_MARKER] = 0;
+    channel_data[DATA_FIELD_MARKER] = 0;
     
     // serial commands
     if (Serial.available() > 0) {
@@ -320,7 +320,7 @@ void loop() {
             start_stop = NAPSE_DATA_STOP;
             break;
         case BLC_COMMAND_BATT:
-            channel_data[PACKET_FIELD_BATT] = (uint32_t) (get_batt() * 100.0);
+            channel_data[DATA_FIELD_BATT] = (uint32_t) (get_batt() * 100.0);
             Serial.println(get_batt());
             bl.sendData(channel_data);
             break;
@@ -367,7 +367,7 @@ void loop() {
                 case WIFI_COMMAND_MARK:
                     // need to be fast
                     ch = c.read();
-                    channel_data[PACKET_FIELD_MARKER] = ch;
+                    channel_data[DATA_FIELD_MARKER] = ch;
                     napse.do_delay = false;
                     break;
                 case WIFI_COMMAND_START:
@@ -441,19 +441,19 @@ void loop() {
     // get data if available (only when ADS is in START mode)
     if (ADS.updateData(&last_data)) {
         //ADS.printData(last_data);
-        channel_data[PACKET_FIELD_NUMBER] = last_data.numPacket;
-        channel_data[PACKET_FIELD_STATUS] = last_data.status;
-        channel_data[PACKET_FIELD_CHANNEL1] = last_data.chan1;
-        channel_data[PACKET_FIELD_CHANNEL2] = last_data.chan2;
-        channel_data[PACKET_FIELD_CHANNEL3] = last_data.chan3;
-        channel_data[PACKET_FIELD_CHANNEL4] = last_data.chan4;
+        channel_data[DATA_FIELD_NUMBER] = last_data.numPacket;
+        channel_data[DATA_FIELD_STATUS] = last_data.status;
+        channel_data[DATA_FIELD_CHANNEL1] = last_data.chan1;
+        channel_data[DATA_FIELD_CHANNEL2] = last_data.chan2;
+        channel_data[DATA_FIELD_CHANNEL3] = last_data.chan3;
+        channel_data[DATA_FIELD_CHANNEL4] = last_data.chan4;
         if (ADS.numCh > 4) {
-            channel_data[PACKET_FIELD_CHANNEL5] = last_data.chan5;
-            channel_data[PACKET_FIELD_CHANNEL6] = last_data.chan6;
+            channel_data[DATA_FIELD_CHANNEL5] = last_data.chan5;
+            channel_data[DATA_FIELD_CHANNEL6] = last_data.chan6;
         }
         if (ADS.numCh > 6) {
-            channel_data[PACKET_FIELD_CHANNEL7] = last_data.chan7;
-            channel_data[PACKET_FIELD_CHANNEL8] = last_data.chan8;
+            channel_data[DATA_FIELD_CHANNEL7] = last_data.chan7;
+            channel_data[DATA_FIELD_CHANNEL8] = last_data.chan8;
         }
 #ifdef USE_BLC
         bl.sendData(channel_data);
