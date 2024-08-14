@@ -1,5 +1,5 @@
 //#define DEBUG_ON
-#define USE_BLE
+#define USE_BLC
 
 #include <Arduino.h>
 #include <cstdint>
@@ -12,10 +12,8 @@
 #include <Adafruit_NeoPixel.h>
 
 #include "filesystem.h"
-#ifdef USE_BLE
-#include "esp32-hal-psram.h"
-#include "esp_bt.h"
-#include "napseBLE.h"
+#ifdef USE_BLC
+#include "dendronBLC.h"
 #else
 #include "napseWifi.h"
 #include "webs.h"
@@ -24,18 +22,19 @@
 #include "leds.h"
 
 channel_data_t last_data;               // last data received from the ADS
-uint32_t channel_data[11];              // data to send
+uint32_t channel_data[12];              // data to send
 uint16_t start_stop = NAPSE_DATA_STOP;  // start/stop logging flag
 boolean start_stop_changed = false;     // for BLE
 channel_config_t* channel_config;       // channel configuration
 boolean config_changed = false;         // for BLE
+float batt;
 
 napse_t napse;                          // firmware configuration
 
 ADS1299 ADS;                            // ADS object
 NapseFilesystem napse_fs;
-#ifdef USE_BLE
-NapseBLE bl;                            // BLE object
+#ifdef USE_BLC
+DendronBLC bl;                            // BLE object
 #else
 NapseWifi wi;                           // WiFi object
 #endif
@@ -138,7 +137,7 @@ void configure_ADS_leadoff() {
     }
 }
 
-#ifndef USE_BLE
+#ifndef USE_BLC
 // WebServer handles
 void handle_root() {
     serverRootHTML.replace("%%SSID%%", wi.wifi_credentials.ssid);
@@ -215,13 +214,11 @@ void setup() {
         Serial.println("💽 Started filesystem.");
     };
 
-    // BLEServer
-#ifdef USE_BLE
-    Serial.println("🔌 Starting BLE...");
+    // BLC
+#ifdef USE_BLC
+    Serial.println("🔌 Starting BLC...");
     bl.setup(NUM_CHANNELS);
-    Serial.println("📡 Started BLE...");
-    // update battery value
-    bl.updateBatt(get_batt());
+    Serial.println("🔵 Started BLC...");
 #else
     Serial.println("🔌 Starting WiFi...");
     napse.wifi_creds = napse_fs.getCredentials();
@@ -266,7 +263,7 @@ void setup() {
     Serial.println("----------------------------------------------");
 
     // ok, show it
-#ifdef USE_BLE
+#ifdef USE_BLC
     napse.init_color = COLOR_INIT_BLE;
 #else
     if (wi.wifi_mode == NAPSE_WIFI_MODE_STA) {
@@ -281,7 +278,7 @@ void setup() {
 
 void loop() {
     // reset marker
-    channel_data[10] = 0;
+    channel_data[PACKET_FIELD_MARKER] = 0;
     
     // serial commands
     if (Serial.available() > 0) {
@@ -305,25 +302,61 @@ void loop() {
         }
     }
 
-#ifdef USE_BLE
-    // BLE commands
-    if (start_stop_changed) {
-        if (start_stop == NAPSE_DATA_STOP) {
-            leds.set(napse.init_color);
-            ADS.STOP();
-            bl.updateBatt(get_batt());
-        } else {
-            bl.updateBatt(get_batt());
+#ifdef USE_BLC
+    // BLC commands
+    if (bl.SerialBT.available() > 0) {
+        char command = bl.SerialBT.read();
+        switch (command) {
+        case BLC_COMMAND_START:
+            Serial.println("Log start");
             leds.set(COLOR_READ);
             ADS.START();
+            start_stop = NAPSE_DATA_START;
+            break;
+        case BLC_COMMAND_STOP:
+            Serial.println("Log stop");
+            leds.set(napse.init_color);
+            ADS.STOP();
+            start_stop = NAPSE_DATA_STOP;
+            break;
+        case BLC_COMMAND_BATT:
+            channel_data[PACKET_FIELD_BATT] = (uint32_t) (get_batt() * 100.0);
+            Serial.println(get_batt());
+            bl.sendData(channel_data);
+            break;
+        case BLC_COMMAND_GROUND: {
+            char n = bl.SerialBT.read();
+            ADS.channelInputMode(n-48, CH_SHORTED);           
+            break;
         }
-        start_stop_changed = false;
+        case BLC_COMMAND_TEST: {
+            char n = bl.SerialBT.read();
+            ADS.channelInputMode(n-48, CH_TEST);
+            break;
+        }
+        case BLC_COMMAND_NORMAL: {
+            char n = bl.SerialBT.read();
+            ADS.channelInputMode(n-48, CH_NORMAL);           
+            break;
+        }
+        case BLC_COMMAND_PWUP: {
+            char n = bl.SerialBT.read();
+            ADS.channelPowerUp(n-48);           
+            break;
+        }
+        case BLC_COMMAND_PWDN: {
+            char n = bl.SerialBT.read();
+            ADS.channelPowerDown(n-48);           
+            break;
+        }
+
+        }
     }
 #endif
     
 
     // WiFi commands
-#ifndef USE_BLE
+#ifndef USE_BLC
     WiFiClient c = wi.client();
     if (c) {
         while (c.connected()) {
@@ -334,7 +367,7 @@ void loop() {
                 case WIFI_COMMAND_MARK:
                     // need to be fast
                     ch = c.read();
-                    channel_data[10] = ch;
+                    channel_data[PACKET_FIELD_MARKER] = ch;
                     napse.do_delay = false;
                     break;
                 case WIFI_COMMAND_START:
@@ -408,28 +441,28 @@ void loop() {
     // get data if available (only when ADS is in START mode)
     if (ADS.updateData(&last_data)) {
         //ADS.printData(last_data);
-        channel_data[0] = last_data.numPacket;
-        channel_data[1] = last_data.status;
-        channel_data[2] = last_data.chan1;
-        channel_data[3] = last_data.chan2;
-        channel_data[4] = last_data.chan3;
-        channel_data[5] = last_data.chan4;
+        channel_data[PACKET_FIELD_NUMBER] = last_data.numPacket;
+        channel_data[PACKET_FIELD_STATUS] = last_data.status;
+        channel_data[PACKET_FIELD_CHANNEL1] = last_data.chan1;
+        channel_data[PACKET_FIELD_CHANNEL2] = last_data.chan2;
+        channel_data[PACKET_FIELD_CHANNEL3] = last_data.chan3;
+        channel_data[PACKET_FIELD_CHANNEL4] = last_data.chan4;
         if (ADS.numCh > 4) {
-            channel_data[6] = last_data.chan5;
-            channel_data[7] = last_data.chan6;
+            channel_data[PACKET_FIELD_CHANNEL5] = last_data.chan5;
+            channel_data[PACKET_FIELD_CHANNEL6] = last_data.chan6;
         }
         if (ADS.numCh > 6) {
-            channel_data[8] = last_data.chan7;
-            channel_data[9] = last_data.chan8;
+            channel_data[PACKET_FIELD_CHANNEL7] = last_data.chan7;
+            channel_data[PACKET_FIELD_CHANNEL8] = last_data.chan8;
         }
-#ifdef USE_BLE
-        bl.updateData(channel_data);
+#ifdef USE_BLC
+        bl.sendData(channel_data);
 #else
         wi.sendData(channel_data);
 #endif
     }
 
-#ifndef USE_BLE
+#ifndef USE_BLC
     // if we are in WiFi Mode, handle the webserver (only if not logging)
     if (start_stop == NAPSE_DATA_STOP) { 
         wi.webServer->handleClient();
